@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, lab_state, status_badge, unitbar with context %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<section class="welcome fade-up">
+  <div>
+    <span class="eyebrow" style="color:#f2d58f">Student dashboard</span>
+    <h1>Hello, {{ current_user.full_name.split()[0] }}</h1>
+    <p>{{ stats.quantity }} units across {{ labs|length }} laboratories · {{ stats.units['Functional'] + stats.units['Partially Functional'] }} inspected and in working order.</p>
+  </div>
+  <form class="hero-search" action="{{ url_for('main.equipment_list') }}" method="get" role="search" data-live-search>
+    <label class="sr-only" for="heroQ">Search equipment</label>
+    {{ icon('search', 'search') }}
+    <input id="heroQ" type="search" name="q" placeholder="Search “oscilloscope”, “VNA”, “Arduino”…" autocomplete="off">
+    <button class="btn btn-accent" type="submit">Search</button>
+    <div class="suggest" data-suggest></div>
+  </form>
+</section>
+
+<div class="grid" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:18px;margin-top:22px" id="dashGrid">
+  <section>
+    <div class="section-head"><div><span class="eyebrow">Laboratories</span><h2>Where the equipment is</h2></div><a href="{{ url_for('main.labs') }}">All laboratories {{ icon('arrow') }}</a></div>
+    <div class="stack">
+    {% for lab in labs %}{% set lu = lab.equipment %}
+      <a class="card lab-card" href="{{ url_for('main.lab_detail', code=lab.code) }}" style="flex-direction:row;align-items:center;gap:16px;flex-wrap:wrap">
+        <div class="lab-icon">{{ icon('lab', 'lg') }}</div>
+        <div style="flex:1;min-width:200px">
+          <h3>{{ lab.name }}</h3>
+          <div class="lab-meta"><span class="{{ 'room-missing' if not lab.room_number }}">{{ icon('pin') }} {{ lab.room_display }}</span><span>{{ icon('box') }} {{ lab.equipment|length }} items</span><span>{{ icon('layers') }} {{ lab.equipment|sum(attribute='quantity') }} units</span></div>
+        </div>
+        {{ lab_state(statuses[lab.id]) }}
+      </a>
+    {% endfor %}
+    </div>
+
+    <div class="section-head" style="margin-top:28px"><div><span class="eyebrow">Browse</span><h2>Equipment categories</h2></div><a href="{{ url_for('main.equipment_list') }}">Full catalogue {{ icon('arrow') }}</a></div>
+    <div class="grid cols-2">
+      {% for c, n, q in categories %}
+      <a class="card cat-tile" href="{{ url_for('main.equipment_list', category=c) }}">
+        <img src="{{ url_for('static', filename='img/equipment/' ~ cat_images.get(c, 'fallback.svg')) }}" alt="">
+        <div><b>{{ c }}</b><span>{{ q }} units · {{ n }} items</span></div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <aside class="stack">
+    <div class="card">
+      <div class="card-head"><h2>{{ icon('bookmark') }} Upcoming bookings</h2><a class="small" href="{{ url_for('main.my_bookings') }}">View all</a></div>
+      {% if upcoming %}
+      <div class="upcoming">
+        {% for b in upcoming %}
+        <a href="{{ url_for('main.booking_detail', ref=b.reference) }}">
+          <div class="date-chip"><b>{{ b.booking_date.day }}</b><span>{{ b.booking_date.strftime('%b') }}</span></div>
+          <div style="flex:1;min-width:0"><b class="small" style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.equipment.name }}</b>
+            <span class="small muted mono">{{ b.start_time.strftime('%H:%M') }}–{{ b.end_time.strftime('%H:%M') }}</span> <span class="small muted">· {{ b.quantity }} unit(s)</span></div>
+          {{ status_badge(b.status) }}
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="small muted">You have no upcoming bookings.</p>
+      <a class="btn btn-primary btn-block" href="{{ url_for('main.equipment_list', bookable=1) }}">{{ icon('search') }} Find equipment to book</a>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h2>{{ icon('activity') }} Inventory health</h2>
+      <p class="small muted" style="margin-bottom:10px">Condition is recorded unit by unit by lab staff.</p>
+      {{ unitbar(stats.units, stats.quantity, 'lg') }}
+      <div class="unit-legend">
+        <span><i class="u-functional"></i>Working <b>{{ stats.units['Functional'] }}</b></span>
+        <span><i class="u-partially-functional"></i>Partial <b>{{ stats.units['Partially Functional'] }}</b></span>
+        <span><i class="u-damaged"></i>Damaged <b>{{ stats.units['Damaged'] }}</b></span>
+        <span><i class="u-unknown"></i>Not inspected <b>{{ stats.units['Unknown'] }}</b></span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>{{ icon('info') }} How booking works</h2>
+      <ol class="small" style="margin:0;padding-left:18px;display:grid;gap:6px;color:var(--ink-2)">
+        <li>Open an item and pick a date, time and number of units.</li>
+        <li>Check availability — damaged units are never offered.</li>
+        <li>Confirm to receive a booking reference. Requests that rely on units not yet inspected stay <b>Pending</b> until staff confirm.</li>
+      </ol>
+    </div>
+  </aside>
+</div>
+<style>@media (max-width: 980px) { #dashGrid { grid-template-columns: 1fr !important; } }</style>
+{% endblock %}

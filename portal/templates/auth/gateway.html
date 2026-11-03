@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, brand with context %}
+{% block title %}Welcome{% endblock %}
+{% block body %}
+<div class="gateway">
+  <section class="auth-visual" aria-label="About the portal">
+    <img class="art" src="{{ url_for('static', filename='img/auth-lab.svg') }}" alt="">
+    {{ brand() }}
+    <div>
+      <span class="eyebrow" style="color:#f2d58f">IIT Roorkee · Laboratory resources</span>
+      <h2 style="font-size:clamp(1.8rem,3vw,2.5rem)">One portal for every laboratory instrument.</h2>
+      <p>Discover equipment across laboratories, check when a lab is accessible, and reserve working units — with condition tracked unit by unit by lab staff.</p>
+    </div>
+    <div class="small" style="color:#9fb0c8">Indian Institute of Technology Roorkee</div>
+  </section>
+  <section class="gateway-main">
+    <div class="auth-mobile-brand" style="justify-content:flex-start">{{ brand() }}</div>
+    {% include "partials/flashes.html" %}
+    <div class="fade-up">
+      <span class="eyebrow">Lab Equipment Portal</span>
+      <h1>Sign in to continue</h1>
+      <p class="muted" style="margin:0">Choose how you use the laboratories. Both accounts use your IIT Roorkee email address.</p>
+      <div class="role-cards">
+        <div class="role-card">
+          <div class="role-ico">{{ icon('user') }}</div>
+          <h2>Student</h2>
+          <p>Search the catalogue, check laboratory timetables, and book available equipment.</p>
+          <div class="actions">
+            <a class="btn btn-primary" href="{{ url_for('student_auth.login') }}">{{ icon('arrow') }} Sign in</a>
+            <a class="btn btn-ghost" href="{{ url_for('student_auth.register') }}">Create student account</a>
+          </div>
+        </div>
+        <div class="role-card staff">
+          <div class="role-ico">{{ icon('shield') }}</div>
+          <h2>Lab staff</h2>
+          <p>Manage inventory and unit condition, confirm bookings, handle issues and timetables.</p>
+          <div class="actions">
+            <a class="btn btn-accent" href="{{ url_for('staff_auth.login') }}">{{ icon('arrow') }} Staff sign in</a>
+            <a class="btn btn-ghost" href="{{ url_for('staff_auth.register') }}">Register with access code</a>
+          </div>
+        </div>
+      </div>
+      <div class="gateway-foot">{{ icon('lock') }}<span>Student sign-up requires an institutional email that you verify. Staff sign-up additionally requires an access code issued by the portal administrator.</span></div>
+    </div>
+  </section>
+</div>
+{% endblock %}

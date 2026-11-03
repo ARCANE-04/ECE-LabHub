@@ -1,0 +1,14 @@
+{% extends "auth/auth_base.html" %}
+{% set mode = 'notice' %}
+{% block title %}Check your email{% endblock %}
+{% block form %}
+<div class="success-ring">{{ icon('mail') }}</div>
+<h1 style="font-size:1.45rem">Check your inbox</h1>
+{% if purpose == 'verify' %}
+<p class="small">If <b>{{ email }}</b> can be registered, a verification link has been sent to it. Open the link to activate your account — it expires in {{ config.VERIFY_TOKEN_HOURS }} hours and works once.</p>
+{% else %}
+<p class="small">If an account exists for <b>{{ email }}</b>, a password reset link has been sent. It expires in {{ config.RESET_TOKEN_MINUTES }} minutes and works once.</p>
+{% endif %}
+<p class="small muted">Nothing arrived? Check your spam folder, or <a href="{{ url_for('student_auth.resend', role=role) if purpose == 'verify' else url_for('student_auth.forgot', role=role) }}">request another link</a>.</p>
+<a class="btn btn-primary btn-block" href="{{ url_for('staff_auth.login' if role == 'staff' else 'student_auth.login') }}">Go to sign in</a>
+{% endblock %}

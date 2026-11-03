@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon with context %}
+{% block title %}About{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">About</span><h1>About the Lab Equipment Portal</h1>
+<p>A single place for students to discover laboratory equipment at IIT Roorkee, see when laboratories are accessible and book available units.</p></div></div>
+<div class="grid cols-2">
+  <div class="card stack">
+    <h2>How the information is maintained</h2>
+    <p class="small">Equipment records were imported from the laboratory inventory lists supplied by each lab and are now maintained by laboratory staff in the Staff Portal. Each record keeps a reference to its original source line.</p>
+    <ul class="small" style="margin:0;padding-left:18px;display:grid;gap:6px">
+      <li><b>Quantities</b> are taken directly from the inventories.</li>
+      <li><b>Condition</b> is recorded per unit — working, partially functional, damaged — and units stay <span class="badge cond-unknown">Not inspected</span> until staff record them. The source lists did not include condition.</li>
+      <li><b>Room numbers</b> and <b>timetables</b> appear once staff enter verified values; the portal never guesses them.</li>
+      <li><b>Images</b> are representative illustrations of the equipment type unless marked as a photo.</li>
+    </ul>
+  </div>
+  <div class="card stack">
+    <h2>Booking rules</h2>
+    <ul class="small" style="margin:0;padding-left:18px;display:grid;gap:6px">
+      <li>Only students with a verified IIT Roorkee institutional email can book.</li>
+      <li>Damaged units are never bookable; items restricted to research use or withdrawn by staff cannot be booked at all.</li>
+      <li>Bookings run {{ config.BOOKING_DAY_START }}–{{ config.BOOKING_DAY_END }}, {{ config.BOOKING_MIN_MINUTES }} minutes to {{ config.BOOKING_MAX_HOURS }} hours, up to {{ config.BOOKING_MAX_DAYS_AHEAD }} days ahead, and never overlap a Class or Reserved period of the laboratory.</li>
+      <li>Requests covered by inspected working units are confirmed immediately; requests that rely on uninspected units stay <span class="badge st-pending">Pending</span> until staff confirm.</li>
+      <li>You can cancel any booking until it ends.</li>
+    </ul>
+  </div>
+</div>
+<div class="card" style="margin-top:18px">
+  <h2>Inventories in the portal</h2>
+  <div class="table-wrap"><table class="data"><thead><tr><th>Laboratory</th><th>Room</th><th class="num">Records</th><th class="num">Units</th><th>Source file</th></tr></thead><tbody>
+  {% for l in labs %}<tr><td><a href="{{ url_for('main.lab_detail', code=l.code) }}">{{ l.name }}</a></td><td class="{{ 'room-missing' if not l.room_number }}">{{ l.room_display }}</td><td class="num">{{ l.equipment|length }}</td><td class="num">{{ l.equipment|sum(attribute='quantity') }}</td><td class="mono small">{{ l.source_file }}</td></tr>{% endfor %}
+  <tr><td><b>Total</b></td><td></td><td class="num"><b>{{ stats.records }}</b></td><td class="num"><b>{{ stats.quantity }}</b></td><td></td></tr>
+  </tbody></table></div>
+</div>
+{% endblock %}

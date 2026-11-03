@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, lab_state with context %}
+{% block title %}Timetable{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Accessibility</span><h1>Laboratory Timetable</h1>
+  <p>Weekly schedules entered and verified by laboratory staff. Where no schedule has been provided, none is shown.</p></div>
+</div>
+
+<div class="grid cols-2" style="margin-bottom:22px">
+  <form class="card" method="get" data-loading-form>
+    <h2>{{ icon('search') }} Check when a laboratory is available</h2>
+    <div class="row">
+      <div class="field"><label for="tlab">Laboratory</label><select id="tlab" name="lab"><option value="">All laboratories</option>{% for l in labs %}<option value="{{ l.code }}" {{ 'selected' if sel == l.code }}>{{ l.name }}</option>{% endfor %}</select></div>
+      <div class="field"><label for="tdate">Date</label><input id="tdate" type="date" name="date" value="{{ request.args.get('date') or now.date().isoformat() }}"></div>
+      <div class="field"><label for="ttime">Time</label><input id="ttime" type="time" name="time" value="{{ request.args.get('time') or now.strftime('%H:%M') }}"></div>
+    </div>
+    <button class="btn btn-primary" type="submit"><span class="spinner"></span>Check</button>
+  </form>
+  <div class="card">
+    <h2>{{ icon('info') }} Reading the timetable</h2>
+    <div class="legend" style="margin-bottom:10px">
+      <span><i style="background:var(--class)"></i> Class — lab occupied by a scheduled class</span>
+      <span><i style="background:var(--reserved)"></i> Reserved — booked for a specific purpose</span>
+      <span><i style="background:var(--open)"></i> Open access — students may use the lab</span>
+    </div>
+    <p class="small muted" style="margin:0">Equipment bookings cannot overlap Class or Reserved periods of the equipment's laboratory. Laboratory accessibility is separate from how many equipment units are free.</p>
+  </div>
+</div>
+
+{% if check %}
+<div class="card" style="margin-bottom:22px">
+  <h2>Availability on {{ check.moment.strftime('%A %d %b %Y, %H:%M') }}</h2>
+  <div class="table-wrap"><table class="data"><thead><tr><th>Laboratory</th><th>Room</th><th>Status</th><th>Detail</th></tr></thead><tbody>
+  {% for l, st in check.results %}<tr><td><b>{{ l.name }}</b></td><td class="{{ 'room-missing' if not l.room_number }}">{{ l.room_display }}</td><td>{{ lab_state(st) }}</td><td class="small">{{ st.detail }}</td></tr>{% endfor %}
+  </tbody></table></div>
+</div>
+{% endif %}
+
+{% for lab in shown %}
+<section class="card" style="margin-bottom:22px">
+  <div class="card-head">
+    <div><h2>{{ lab.name }}</h2>
+      <div class="small {{ 'room-missing' if not lab.room_number }}">{{ icon('pin') }} {% if lab.room_number %}Room {{ lab.room_number }}{% else %}Room number not yet provided{% endif %}</div></div>
+    {{ lab_state(statuses[lab.id]) }}
+  </div>
+  {% if not lab.timetable %}
+    <div class="tt-empty">{{ icon('calendar') }}<b>Schedule not provided.</b><br><span class="small">A verified timetable for {{ lab.name }} has not been provided yet. Contact the laboratory before visiting.</span></div>
+  {% else %}
+    {% include "partials/lab_timetable.html" %}
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

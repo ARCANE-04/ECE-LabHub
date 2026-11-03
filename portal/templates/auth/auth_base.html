@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, brand, password_field with context %}
+{% block body %}
+{% set staff_mode = role == 'staff' %}
+<div class="auth {{ 'staff' if staff_mode }}">
+  <section class="auth-visual" aria-label="IIT Roorkee Lab Equipment Portal">
+    <img class="art" src="{{ url_for('static', filename='img/auth-lab.svg') }}" alt="">
+    {{ brand() }}
+    <div>
+      {% if staff_mode %}
+      <span class="eyebrow" style="color:#f2d58f">Staff console</span>
+      <h2>Keep every instrument accounted for.</h2>
+      <ul class="auth-points">
+        <li>{{ icon('box') }} Record the condition of every unit, not just every item</li>
+        <li>{{ icon('bookmark') }} Confirm bookings and resolve reported faults</li>
+        <li>{{ icon('calendar') }} Publish verified laboratory timetables</li>
+      </ul>
+      {% else %}
+      <span class="eyebrow" style="color:#f2d58f">Student access</span>
+      <h2>Laboratory equipment, one search away.</h2>
+      <ul class="auth-points">
+        <li>{{ icon('search') }} Search instruments across laboratories</li>
+        <li>{{ icon('calendar') }} See when a laboratory is open</li>
+        <li>{{ icon('bookmark') }} Reserve working units with a booking reference</li>
+      </ul>
+      {% endif %}
+    </div>
+    <div class="small" style="color:#9fb0c8">Indian Institute of Technology Roorkee</div>
+  </section>
+  <section class="auth-form">
+    <div class="auth-card fade-up">
+      <div class="auth-mobile-brand">{{ brand() }}</div>
+      {% include "partials/flashes.html" %}
+      <div class="auth-switch" role="tablist" aria-label="Account type">
+        <a href="{{ url_for('student_auth.login') if mode != 'register' else url_for('student_auth.register') }}" class="{{ 'active' if not staff_mode }}" role="tab">{{ icon('user') }} Student</a>
+        <a href="{{ url_for('staff_auth.login') if mode != 'register' else url_for('staff_auth.register') }}" class="{{ 'active' if staff_mode }}" role="tab">{{ icon('shield') }} Staff</a>
+      </div>
+      <div class="card">
+        {% if mode in ('login', 'register') %}
+        <nav class="mode-tabs" aria-label="Sign in or create account">
+          <a href="{{ url_for('staff_auth.login' if staff_mode else 'student_auth.login') }}" class="{{ 'active' if mode == 'login' }}">Sign in</a>
+          <a href="{{ url_for('staff_auth.register' if staff_mode else 'student_auth.register') }}" class="{{ 'active' if mode == 'register' }}">Create account</a>
+        </nav>
+        {% endif %}
+        {% block form %}{% endblock %}
+      </div>
+      <div class="auth-foot"><a href="{{ url_for('main.home') }}">{{ icon('arrow') }} Portal home</a></div>
+    </div>
+  </section>
+</div>
+{% endblock %}

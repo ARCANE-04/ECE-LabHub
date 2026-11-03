@@ -1,0 +1,21 @@
+# Local data - never commit (secret key, database with users/passwords, saved emails)
+instance/
+*.db
+*.db-shm
+*.db-wal
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+env/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
+.env

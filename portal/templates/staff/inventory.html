@@ -1,0 +1,63 @@
+{% extends "staff/layout.html" %}
+{% from "partials/macros.html" import icon, cond_badge, unitbar, unit_legend with context %}
+{% block title %}Equipment &amp; units{% endblock %}
+{% block crumb %}Equipment &amp; units{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1 style="margin:0">Equipment &amp; units</h1>
+    <p>Record how many units of each item are working, partially functional, damaged or not yet inspected.</p></div>
+  <a class="btn btn-accent" href="{{ url_for('staff.edit_equipment') }}">{{ icon('plus') }} Add equipment</a>
+</div>
+
+{% set u = stats.units %}
+<div class="kpi-grid" style="margin-bottom:16px">
+  <div class="kpi"><div class="k-label">{{ icon('box') }} {{ 'Lab records' if sel_lab else 'Records' }}</div><div class="k-value">{{ stats.records }}</div><div class="k-sub">{{ stats.quantity }} units in stock</div></div>
+  <a class="kpi" href="{{ url_for('staff.inventory', lab=sel_lab, status='Functional') }}"><div class="k-label"><i class="u-functional"></i> Working</div><div class="k-value">{{ u['Functional'] }}</div><div class="k-sub">units</div></a>
+  <a class="kpi" href="{{ url_for('staff.inventory', lab=sel_lab, status='Mixed') }}"><div class="k-label"><i class="u-partially-functional"></i> Partial</div><div class="k-value">{{ u['Partially Functional'] }}</div><div class="k-sub">units</div></a>
+  <a class="kpi" href="{{ url_for('staff.inventory', lab=sel_lab, has='damaged') }}"><div class="k-label"><i class="u-damaged"></i> Damaged</div><div class="k-value">{{ u['Damaged'] }}</div><div class="k-sub">units in {{ stats.records_with_damage }} record(s)</div></a>
+  <a class="kpi" href="{{ url_for('staff.inventory', lab=sel_lab, has='unverified') }}"><div class="k-label"><i class="u-unknown"></i> Not inspected</div><div class="k-value">{{ u['Unknown'] }}</div><div class="k-sub">units</div></a>
+  <div class="kpi"><div class="k-label">{{ icon('activity') }} Inspected</div><div class="k-value">{{ stats.inspected_pct }}%</div><div class="k-sub">{{ unitbar(u, stats.quantity) }}</div></div>
+</div>
+
+<div class="panel">
+  <form class="toolbar" method="get" data-loading-form>
+    <div class="field grow"><label for="q">Search</label><input id="q" type="search" name="q" value="{{ q }}" placeholder="Name, manufacturer, model, category"></div>
+    <div class="field"><label for="lab">Laboratory</label><select id="lab" name="lab"><option value="">All laboratories</option>{% for l in labs %}<option value="{{ l.id }}" {{ 'selected' if sel_lab == l.id }}>{{ l.name }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="status">Overall condition</label><select id="status" name="status"><option value="">Any</option>{% for c in statuses %}<option value="{{ c }}" {{ 'selected' if sel_status == c }}>{{ {'Unknown': 'Not inspected'}.get(c, c) }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="has">Contains</label><select id="has" name="has"><option value="">Any units</option><option value="damaged" {{ 'selected' if sel_has == 'damaged' }}>Damaged units</option><option value="unverified" {{ 'selected' if sel_has == 'unverified' }}>Uninspected units</option></select></div>
+    <div class="field" style="flex:0 0 auto"><button class="btn btn-primary" type="submit"><span class="spinner"></span>{{ icon('filter') }} Apply</button>
+      {% if q or sel_lab or sel_status or sel_has %}<a class="btn btn-ghost" href="{{ url_for('staff.inventory') }}">Clear</a>{% endif %}</div>
+  </form>
+  <div class="panel-head" style="border-bottom:0;padding-bottom:4px">
+    <h2>{{ shown.records }} record{{ '' if shown.records == 1 else 's' }} · {{ shown.quantity }} units</h2>
+    <span class="small muted">{{ shown.damaged }} damaged · {{ shown.unknown }} not inspected in this view</span>
+  </div>
+  {% if items %}
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th>Equipment</th><th class="num">Stock</th><th class="num">Working</th><th class="num">Partial</th><th class="num">Damaged</th><th class="num">Not inspected</th><th style="min-width:150px">Condition</th><th></th></tr></thead>
+    <tbody>
+    {% for e in items %}
+    <tr id="eq-{{ e.id }}">
+      <td style="min-width:260px"><div style="display:flex;gap:12px;align-items:center">
+        <img class="thumb" src="{{ img_src(e.image_path) }}" alt="" loading="lazy">
+        <div style="min-width:0"><a href="{{ url_for('staff.edit_equipment', eq_id=e.id) }}"><b>{{ e.name }}</b></a>
+          <div class="small muted">{{ [e.manufacturer, e.model, e.specification]|select|join(' · ') or e.category }}</div>
+          <div class="small muted">{{ icon('lab') }} {{ e.lab.name }}{% if e.access_level == 'Research only' %} · <span style="color:var(--brick)">Research only</span>{% endif %}{% if not e.bookable %} · booking withdrawn{% endif %}</div></div>
+      </div></td>
+      <td class="num"><b>{{ e.quantity }}</b></td>
+      <td class="num"><span class="num-pill f {{ 'zero' if not e.units_functional }}">{{ e.units_functional }}</span></td>
+      <td class="num"><span class="num-pill p {{ 'zero' if not e.units_partial }}">{{ e.units_partial }}</span></td>
+      <td class="num"><span class="num-pill d {{ 'zero' if not e.units_damaged }}">{{ e.units_damaged }}</span></td>
+      <td class="num"><span class="num-pill u {{ 'zero' if not e.units_unknown }}">{{ e.units_unknown }}</span></td>
+      <td>{{ unitbar(e.unit_breakdown, e.quantity) }}<div style="margin-top:6px">{{ cond_badge(e.condition) }}</div></td>
+      <td style="white-space:nowrap;text-align:right;padding-right:18px">
+        <button class="btn btn-primary btn-sm" type="button" data-units='{{ {"url": url_for("staff.update_units", eq_id=e.id), "name": e.name, "lab": e.lab.name, "img": img_src(e.image_path), "q": e.quantity, "f": e.units_functional, "p": e.units_partial, "d": e.units_damaged}|tojson|forceescape }}'>{{ icon('layers') }} Update units</button>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('staff.edit_equipment', eq_id=e.id) }}" title="Edit details" aria-label="Edit details">{{ icon('edit') }}</a>
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}<div class="empty">{{ icon('box') }}No equipment matches these filters.</div>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "auth/auth_base.html" %}
+{% set mode = 'notice' %}
+{% block title %}{{ title }}{% endblock %}
+{% block form %}
+<h1 style="font-size:1.45rem">{{ title }}</h1>
+<p class="small muted">Enter the institute email address you registered with.</p>
+<form method="post" action="{{ action }}" novalidate data-validate data-loading-form>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="role" value="{{ role }}">
+  <div class="field"><label for="email">Institute email</label>
+    <input id="email" type="email" name="email" required autocomplete="email" data-iitr-email>
+    <div class="error" data-error-for="email" hidden></div></div>
+  <button class="btn btn-primary btn-block" type="submit"><span class="spinner"></span>{{ icon('mail') }} {{ button }}</button>
+</form>
+<p class="small" style="text-align:center;margin:14px 0 0"><a href="{{ url_for('staff_auth.login' if role == 'staff' else 'student_auth.login') }}">Back to sign in</a></p>
+{% endblock %}

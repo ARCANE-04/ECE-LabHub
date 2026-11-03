@@ -1,0 +1,32 @@
+{% extends "staff/layout.html" %}
+{% from "partials/macros.html" import icon, unitbar with context %}
+{% block title %}Laboratories{% endblock %}
+{% block crumb %}Laboratories{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1 style="margin:0">Laboratories</h1><p>Names, rooms and descriptions shown to students across the portal.</p></div></div>
+{% if labs|selectattr('room_number', 'none')|list %}
+<div class="notice info" style="margin-bottom:16px">{{ icon('info') }}<div>The supplied inventory files did not include room numbers. Students see “Room not yet provided” until you enter the verified room.</div></div>
+{% endif %}
+<div class="grid cols-3">
+{% for lab in labs %}{% set r = breakdown[lab.id] %}
+<form class="panel" method="post" data-loading-form>
+  <div class="panel-head"><h2>{{ icon('lab') }} {{ lab.name }}</h2><span class="small muted">{{ r.records }} records · {{ r.quantity }} units</span></div>
+  <div class="panel-body">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="lab_id" value="{{ lab.id }}">
+    <div style="margin-bottom:14px">{{ unitbar(r.units, r.quantity) }}<div class="small muted" style="margin-top:4px">{{ r.units['Functional'] }} working · {{ r.units['Partially Functional'] }} partial · {{ r.units['Damaged'] }} damaged · {{ r.units['Unknown'] }} not inspected</div></div>
+    <div class="field"><label>Laboratory name</label><input name="name" value="{{ lab.name }}" required></div>
+    <div class="row">
+      <div class="field"><label>Room number</label><input name="room_number" value="{{ lab.room_number or '' }}" placeholder="Not provided"></div>
+      <div class="field"><label>Building</label><input name="building" value="{{ lab.building or '' }}"></div>
+    </div>
+    <div class="field"><label>Description</label><textarea name="description">{{ lab.description or '' }}</textarea></div>
+    <label class="checkbox" style="margin-bottom:12px"><input type="checkbox" name="booking_enabled" value="1" {{ 'checked' if lab.booking_enabled }}> Student booking enabled</label>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <span class="small muted">Source: <span class="mono">{{ lab.source_file }}</span></span>
+      <button class="btn btn-primary btn-sm" type="submit"><span class="spinner"></span>{{ icon('check') }} Save</button>
+    </div>
+  </div>
+</form>
+{% endfor %}
+</div>
+{% endblock %}

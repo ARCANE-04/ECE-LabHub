@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, status_badge, eq_image with context %}
+{% block title %}Booking {{ b.reference }}{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{{ url_for('main.my_bookings') }}">My Bookings</a> / {{ b.reference }}</div>
+<div class="split">
+  <div class="card fade-up">
+    {% if new %}
+      <div class="success-ring {{ 'pending' if b.status == 'Pending' }}">{{ icon('check-circle' if b.status == 'Confirmed' else 'clock') }}</div>
+      <h1>{% if b.status == 'Confirmed' %}Booking confirmed{% else %}Booking request received{% endif %}</h1>
+      <p class="muted">{% if b.status == 'Confirmed' %}Your units are reserved. Quote this reference at the laboratory.{% else %}Your units are held. Lab staff will confirm once the equipment condition is verified.{% endif %}</p>
+    {% else %}
+      <span class="eyebrow">Booking</span><h1>Booking details</h1>
+    {% endif %}
+    <div style="margin:10px 0 18px"><div class="small muted">Booking reference</div><div class="ref-big">{{ b.reference }}</div></div>
+    <dl class="specs">
+      <dt>Status</dt><dd>{{ status_badge(b.status) }}{% if b.status_note %}<div class="small muted" style="margin-top:4px">{{ b.status_note }}</div>{% endif %}</dd>
+      <dt>Equipment</dt><dd><a href="{{ url_for('main.equipment_detail', eq_id=b.equipment.id) }}">{{ b.equipment.title }}</a></dd>
+      <dt>Laboratory</dt><dd>{{ b.equipment.lab.name }} · <span class="{{ 'room-missing' if not b.equipment.lab.room_number }}">{{ b.equipment.lab.room_display }}</span></dd>
+      <dt>Date</dt><dd>{{ b.booking_date.strftime('%A, %d %B %Y') }}</dd>
+      <dt>Time</dt><dd class="mono">{{ b.start_time.strftime('%H:%M') }} – {{ b.end_time.strftime('%H:%M') }}</dd>
+      <dt>Units</dt><dd>{{ b.quantity }}</dd>
+      <dt>Purpose</dt><dd>{{ b.purpose or '—' }}</dd>
+      <dt>Requested</dt><dd>{{ b.created_at|localdt }}</dd>
+    </dl>
+    <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap">
+      <a class="btn btn-ghost" href="{{ url_for('main.my_bookings') }}">{{ icon('bookmark') }} All my bookings</a>
+      {% if can_cancel %}
+      <form method="post" action="{{ url_for('main.booking_cancel', ref=b.reference) }}" data-confirm="Cancel booking {{ b.reference }}? This releases the units for others.">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-danger" type="submit">{{ icon('x') }} Cancel booking</button>
+      </form>{% endif %}
+    </div>
+  </div>
+  <aside class="card flush"><div class="eq-hero-img" style="border:0;border-radius:0">{{ eq_image(b.equipment) }}</div>
+    <div style="padding:16px"><b>{{ b.equipment.name }}</b><div class="small muted">{{ b.equipment.category }}</div></div></aside>
+</div>
+{% endblock %}

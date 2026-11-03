@@ -1,0 +1,17 @@
+Sr. No.,Equipment,Specification,Quantity,Usage / Remarks
+1,VNA,R&S Make 1 MHz to 3 GHz,2,For UG/PG Labs & Research
+1,VNA,R&S Make 1 MHz to 4.5 GHz,1,For UG/PG Labs & Research
+1,VNA,Anritsu Make 1 MH to 3 GHz,1,For Research purpose
+1,VNA,Keysight Make 1MHz to 67 GHz (PNA),1,For Research purpose
+2,RF Signal Sources,R&S Make Signal Source (12.75 GHz),4,For UG/PG Labs & Research
+2,RF Signal Sources,R&S Make Vector Signal Soure (3 GHz),1,For UG/PG Labs & Research
+2,RF Signal Sources,R&S Make Signal Soure (20 GHz),1,For UG/PG Labs & Research
+2,RF Signal Sources,R&S Make Signal Soure (20 GHz),1,For UG/PG Labs & Research
+2,RF Signal Sources,Agilent Make Signal Soure (20 GHz),1,For UG/PG Labs & Research
+3,Spectrum Analyzer,R&S Make (Upto 3 GHz),3,For UG/PG Labs & Research
+4,DSO,TETRINIX (Upto 3 GHz),1,For UG/PG Labs & Research
+4,DSO,Keysight Make (10 MHz to 2GHZ),2,For UG/PG Labs & Research
+5,DC Power Supply,R&S Make NGE 100,2,For Research purpose
+5,DC Power Supply,"Keysight Make  (6V/5A,30V/1A, 30V, 1A)",3,For Research purpose
+6,Anechoic Chamber,Far Feald measurment facility,1,For UG/PG Labs & Research
+7,Fabrication,"LPKF S100, (Milling, Drilling, Cutting, Tracing )",1,For UG/PG Labs & Research

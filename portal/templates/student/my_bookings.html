@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, status_badge, eq_image with context %}
+{% block title %}My Bookings{% endblock %}
+{% macro booking_rows(rows, active) %}
+<div class="table-wrap"><table class="data">
+  <thead><tr><th>Reference</th><th>Equipment</th><th>Laboratory</th><th>Date</th><th>Time</th><th class="num">Units</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for b in rows %}
+  <tr>
+    <td><a class="mono" href="{{ url_for('main.booking_detail', ref=b.reference) }}">{{ b.reference }}</a></td>
+    <td><a href="{{ url_for('main.equipment_detail', eq_id=b.equipment.id) }}">{{ b.equipment.name }}</a><div class="small muted">{{ [b.equipment.manufacturer, b.equipment.model]|select|join(' · ') }}</div></td>
+    <td>{{ b.equipment.lab.name }}<div class="small muted">{{ b.equipment.lab.room_display }}</div></td>
+    <td>{{ b.booking_date.strftime('%a %d %b %Y') }}</td>
+    <td class="mono">{{ b.start_time.strftime('%H:%M') }}–{{ b.end_time.strftime('%H:%M') }}</td>
+    <td class="num">{{ b.quantity }}</td>
+    <td>{{ status_badge(b.status) }}</td>
+    <td>{% if active and b.ends_at > now %}
+      <form method="post" action="{{ url_for('main.booking_cancel', ref=b.reference) }}" data-confirm="Cancel booking {{ b.reference }}?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="back" value="list">
+        <button class="btn btn-danger btn-sm" type="submit">{{ icon('x') }} Cancel</button></form>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody></table></div>
+{% endmacro %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Student</span><h1>My Bookings</h1><p>Current and previous equipment bookings for {{ current_user.email }}.</p></div>
+  <a class="btn btn-primary" href="{{ url_for('main.equipment_list', bookable=1) }}">{{ icon('plus') }} New booking</a>
+</div>
+<div class="card flush" style="margin-bottom:22px">
+  <div class="card-head" style="padding:16px 20px 0"><h2>Current &amp; upcoming</h2><span class="muted small">{{ current|length }} active</span></div>
+  {% if current %}{{ booking_rows(current, True) }}{% else %}<div class="empty">{{ icon('calendar') }}You have no upcoming bookings.</div>{% endif %}
+</div>
+<div class="card flush">
+  <div class="card-head" style="padding:16px 20px 0"><h2>Previous</h2><span class="muted small">Completed and cancelled</span></div>
+  {% if past %}{{ booking_rows(past, False) }}{% else %}<div class="empty">{{ icon('clock') }}No previous bookings yet.</div>{% endif %}
+</div>
+{% endblock %}

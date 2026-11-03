@@ -1,0 +1,21 @@
+{% extends "auth/auth_base.html" %}
+{% set mode = 'login' %}
+{% block title %}{{ 'Staff' if role == 'staff' else 'Student' }} sign in{% endblock %}
+{% block form %}
+<h1 style="font-size:1.45rem">{{ 'Staff sign in' if role == 'staff' else 'Welcome back' }}</h1>
+<p class="small muted">{% if role == 'staff' %}Restricted to authorised laboratory staff.{% else %}Sign in with your institute email address.{% endif %}</p>
+<form method="post" novalidate data-validate data-loading-form>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+  <div class="field"><label for="email">Institute email</label>
+    <input id="email" type="email" name="email" value="{{ email }}" autocomplete="username" required placeholder="name@{{ 'iitr.ac.in' if role == 'staff' else 'branch.iitr.ac.in' }}" data-iitr-email>
+    <div class="error" data-error-for="email" hidden></div></div>
+  {{ password_field('password', 'Password') }}
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px">
+    <label class="checkbox" style="margin:0"><input type="checkbox" name="remember" value="1"> Keep me signed in</label>
+    <a class="small" href="{{ url_for('student_auth.forgot', role=role) }}">Forgot password?</a>
+  </div>
+  <button class="btn {{ 'btn-accent' if role == 'staff' else 'btn-primary' }} btn-block" type="submit"><span class="spinner"></span>{{ icon('arrow') }} Sign in</button>
+</form>
+{% if show_resend %}<a class="btn btn-ghost btn-block" style="margin-top:10px" href="{{ url_for('student_auth.resend', role=role) }}">{{ icon('mail') }} Resend verification email</a>{% endif %}
+{% endblock %}

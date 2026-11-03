@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon with context %}
+{% block body %}
+<div class="shell">
+  <aside class="sidebar" id="sidebar" aria-label="Staff navigation">
+    <a class="sb-brand" href="{{ url_for('staff.dashboard') }}">
+      <img src="{{ url_for('static', filename='img/portal-logo.svg') }}" alt="">
+      <span><b>Lab Equipment Portal</b><span>Staff console</span></span>
+    </a>
+    <div class="sb-section">Overview</div>
+    <nav class="sb-nav">
+      <a href="{{ url_for('staff.dashboard') }}" class="{{ 'active' if nav == 'dashboard' }}">{{ icon('dashboard') }} Dashboard</a>
+    </nav>
+    <div class="sb-section">Inventory</div>
+    <nav class="sb-nav">
+      <a href="{{ url_for('staff.inventory') }}" class="{{ 'active' if nav == 'inventory' }}">{{ icon('box') }} Equipment &amp; units</a>
+      <a href="{{ url_for('staff.labs') }}" class="{{ 'active' if nav == 'labs' }}">{{ icon('lab') }} Laboratories</a>
+    </nav>
+    <div class="sb-section">Operations</div>
+    <nav class="sb-nav">
+      <a href="{{ url_for('staff.bookings', status='Pending') if pending_count else url_for('staff.bookings') }}" class="{{ 'active' if nav == 'bookings' }}">{{ icon('bookmark') }} Bookings {% if pending_count %}<span class="count">{{ pending_count }}</span>{% endif %}</a>
+      <a href="{{ url_for('staff.issues') }}" class="{{ 'active' if nav == 'issues' }}">{{ icon('wrench') }} Issues {% if open_issue_count %}<span class="count">{{ open_issue_count }}</span>{% endif %}</a>
+      <a href="{{ url_for('staff.timetable') }}" class="{{ 'active' if nav == 'timetable' }}">{{ icon('calendar') }} Timetable</a>
+    </nav>
+    {% if current_user.is_admin %}
+    <div class="sb-section">Administration</div>
+    <nav class="sb-nav">
+      <a href="{{ url_for('staff.access') }}" class="{{ 'active' if nav == 'access' }}">{{ icon('lock') }} Staff access</a>
+    </nav>
+    {% endif %}
+    <div class="sb-section">Student view</div>
+    <nav class="sb-nav">
+      <a href="{{ url_for('main.equipment_list') }}" target="_blank" rel="noopener">{{ icon('eye') }} Open student portal</a>
+    </nav>
+    <div class="sb-foot">
+      <div class="sb-user"><span class="avatar">{{ current_user.full_name[:1] }}</span>
+        <div><b>{{ current_user.full_name }}</b><small>{{ current_user.designation or 'Lab staff' }}{% if current_user.is_admin %} · Admin{% endif %}</small></div></div>
+      <form method="post" action="{{ url_for('student_auth.logout') }}" class="sb-nav" style="padding:0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">{{ icon('logout') }} Sign out</button>
+      </form>
+    </div>
+  </aside>
+  <div class="shell-main">
+    <header class="shell-top">
+      <button class="sb-toggle" type="button" aria-label="Open navigation" data-sidebar-toggle>{{ icon('menu') }}</button>
+      <div class="crumb">Staff console / <b>{% block crumb %}{% endblock %}</b></div>
+      <div class="spacer"></div>
+      <div class="iitr">{% if iitr_logo_available %}<img src="{{ url_for('static', filename='img/iitr-logo.png') }}" alt="IIT Roorkee logo">{% endif %}<span>IIT Roorkee</span></div>
+    </header>
+    {% include "partials/flashes.html" %}
+    <main class="shell-content">{% block content %}{% endblock %}</main>
+  </div>
+</div>
+{% include "staff/_units_dialog.html" %}
+{% endblock %}

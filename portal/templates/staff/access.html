@@ -1,0 +1,69 @@
+{% extends "staff/layout.html" %}
+{% from "partials/macros.html" import icon with context %}
+{% block title %}Staff access{% endblock %}
+{% block crumb %}Staff access{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1 style="margin:0">Staff access</h1><p>Issue sign-up codes to new lab staff and manage existing staff accounts.</p></div></div>
+
+{% if new_code %}
+<div class="code-reveal fade-up" style="margin-bottom:16px">
+  {{ icon('lock', 'lg') }}
+  <div style="flex:1;min-width:220px"><div class="small" style="color:#9fb0c8">New staff access code — copy it now, it will not be shown again</div>
+    <div class="code" id="newCode">{{ new_code }}</div></div>
+  <button class="btn btn-accent" type="button" data-copy="#newCode">{{ icon('check') }} Copy code</button>
+  <div class="small" style="color:#9fb0c8;width:100%">Share it privately. The recipient registers at <span class="mono" style="color:#fff">{{ url_for('staff_auth.register', _external=True) }}</span> with their @iitr.ac.in address and verifies their email.</div>
+</div>
+{% endif %}
+
+<div class="split">
+  <div class="stack">
+    <div class="panel">
+      <div class="panel-head"><h2>{{ icon('ticket') }} Access codes</h2><span class="small muted">Only a hashed form of each code is stored</span></div>
+      {% if codes %}<div class="table-wrap"><table class="data">
+        <thead><tr><th>Code</th><th>For</th><th class="num">Used</th><th>Expires</th><th>Status</th><th></th></tr></thead><tbody>
+        {% for c in codes %}<tr>
+          <td class="mono" style="white-space:nowrap">••••-••••-{{ c.hint }}</td>
+          <td class="small">{{ c.label or '—' }}<div class="muted">by {{ c.created_by.full_name if c.created_by else 'CLI' }} · {{ c.created_at|localdt('%d %b %Y') }}</div></td>
+          <td class="num">{{ c.uses }} / {{ c.max_uses }}</td>
+          <td class="small">{{ c.expires_at|localdt }}</td>
+          <td><span class="badge {{ {'Active':'cond-functional','Revoked':'cond-damaged','Expired':'cond-unknown','Used up':'st-completed'}[c.state] }}">{{ c.state }}</span></td>
+          <td>{% if c.state == 'Active' %}<form method="post" data-confirm="Revoke this access code? Nobody will be able to register with it."><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="revoke"><input type="hidden" name="code_id" value="{{ c.id }}"><button class="btn btn-danger btn-sm">Revoke</button></form>{% endif %}</td>
+        </tr>{% endfor %}
+      </tbody></table></div>{% else %}<div class="empty">{{ icon('ticket') }}No access codes issued yet.</div>{% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>{{ icon('user') }} Staff accounts</h2><span class="small muted">{{ team|length }} staff</span></div>
+      <div class="table-wrap"><table class="data">
+        <thead><tr><th>Name</th><th>Designation</th><th>Status</th><th>Last sign-in</th><th></th></tr></thead><tbody>
+        {% for u in team %}<tr>
+          <td><b>{{ u.full_name }}</b>{% if u.is_admin %} <span class="badge plain st-completed">Admin</span>{% endif %}<div class="small muted">{{ u.email }}</div></td>
+          <td class="small">{{ u.designation or '—' }}{% if u.department %}<div class="muted">{{ u.department }}</div>{% endif %}</td>
+          <td>{% if not u.is_enabled %}<span class="badge cond-damaged">Disabled</span>{% elif not u.is_verified %}<span class="badge st-pending">Email not verified</span>{% else %}<span class="badge cond-functional">Active</span>{% endif %}</td>
+          <td class="small">{{ u.last_login_at|localdt }}</td>
+          <td style="white-space:nowrap">{% if u.id != current_user.id %}
+            <form class="inline" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="user_id" value="{{ u.id }}">
+              <input type="hidden" name="action" value="{{ 'remove_admin' if u.is_admin else 'make_admin' }}"><button class="btn btn-ghost btn-sm">{{ 'Remove admin' if u.is_admin else 'Make admin' }}</button></form>
+            <form class="inline" method="post" data-confirm="{{ 'Disable' if u.is_enabled else 'Re-enable' }} {{ u.full_name }}?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="user_id" value="{{ u.id }}">
+              <input type="hidden" name="action" value="{{ 'disable' if u.is_enabled else 'enable' }}"><button class="btn {{ 'btn-danger' if u.is_enabled else 'btn-ok' }} btn-sm">{{ 'Disable' if u.is_enabled else 'Enable' }}</button></form>
+          {% else %}<span class="small muted">You</span>{% endif %}</td>
+        </tr>{% endfor %}
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <form class="panel sticky" method="post" data-loading-form>
+    <div class="panel-head"><h2>{{ icon('plus') }} Issue a code</h2></div>
+    <div class="panel-body">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="generate">
+      <div class="field"><label for="label">Issued to</label><input id="label" name="label" maxlength="160" placeholder="e.g. Microwave Lab technician"></div>
+      <div class="row">
+        <div class="field"><label for="max_uses">Accounts allowed</label><input id="max_uses" type="number" name="max_uses" min="1" max="50" value="1"></div>
+        <div class="field"><label for="days">Valid for (days)</label><input id="days" type="number" name="days" min="1" max="90" value="7"></div>
+      </div>
+      <p class="small muted">Use one code per person where possible. Codes can be revoked at any time.</p>
+      <button class="btn btn-accent btn-block" type="submit"><span class="spinner"></span>{{ icon('lock') }} Generate access code</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

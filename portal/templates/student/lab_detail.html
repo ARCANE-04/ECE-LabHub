@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, lab_state, eq_card, cond_badge with context %}
+{% block title %}{{ lab.name }}{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{{ url_for('main.labs') }}">Laboratories</a> / {{ lab.name }}</div>
+<div class="lab-banner fade-up">
+  <span class="eyebrow" style="color:#f2d58f">Laboratory</span>
+  <h1>{{ lab.name }}</h1>
+  <span class="room {{ 'missing' if not lab.room_number }}">{{ icon('pin') }} {% if lab.room_number %}Room {{ lab.room_number }}{% else %}Room number not yet provided{% endif %}{% if lab.building %} · {{ lab.building }}{% endif %}</span>
+  {% if lab.description %}<p>{{ lab.description }}</p>{% endif %}
+</div>
+
+<div class="grid cols-4" style="margin-top:18px">
+  <div class="card stat c-total"><div class="label">{{ icon('box') }} Equipment records</div><div class="value">{{ stats.records }}</div></div>
+  <div class="card stat c-total"><div class="label">{{ icon('layers') }} Total units</div><div class="value">{{ stats.quantity }}</div></div>
+  <div class="card stat"><div class="label">{{ icon('activity') }} Accessibility now</div><div style="margin-top:10px">{{ lab_state(status) }}</div><div class="sub" style="margin-top:6px">{{ status.detail }}</div></div>
+  <div class="card stat"><div class="label">{{ icon('calendar') }} Timetable</div>
+    <div class="sub" style="margin-top:10px">{% if lab.timetable %}{{ lab.timetable|length }} weekly slot(s){% else %}Schedule not provided{% endif %}</div>
+    <a class="small" href="{{ url_for('main.timetable', lab=lab.code) }}">Open timetable {{ icon('arrow') }}</a></div>
+</div>
+
+<section class="section">
+  <div class="section-head">
+    <h2>Equipment in {{ lab.name }}</h2>
+    <form class="filters" method="get" action="{{ url_for('main.equipment_list') }}">
+      <input type="hidden" name="lab" value="{{ lab.code }}">
+      <div class="field"><select name="category" aria-label="Category" onchange="this.form.submit()"><option value="">All categories</option>{% for c in categories %}<option>{{ c }}</option>{% endfor %}</select></div>
+    </form>
+  </div>
+  {% if lab.equipment %}
+  <div class="grid auto">{% for eq in lab.equipment %}{{ eq_card(eq) }}{% endfor %}</div>
+  {% else %}<div class="card empty">{{ icon('box') }} No equipment recorded for this laboratory.</div>{% endif %}
+</section>
+<p class="source-note" style="margin-top:22px">Source inventory: <span class="mono">{{ lab.source_file }}</span>. Units show as “Not inspected” until lab staff record their condition.</p>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "staff/layout.html" %}
+{% from "partials/macros.html" import icon, cond_badge, eq_image, unitbar with context %}
+{% block title %}{{ 'Edit' if eq.id else 'Add' }} equipment{% endblock %}
+{% block crumb %}<a href="{{ url_for('staff.inventory') }}">Equipment &amp; units</a> / {{ eq.name if eq.id else 'New equipment' }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1 style="margin:0">{{ eq.name if eq.id else 'Add equipment' }}</h1>{% if eq.id %}<p>{{ cond_badge(eq.condition) }} · {{ eq.lab.name }} · {{ unit_summary(eq) }}</p>{% endif %}</div></div>
+<form method="post" data-loading-form data-units-inline>
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="split">
+  <div class="stack">
+    <div class="panel"><div class="panel-head"><h2>{{ icon('info') }} Details</h2></div><div class="panel-body">
+      <div class="field"><label for="name">Name</label><input id="name" name="name" required value="{{ eq.name or '' }}"></div>
+      <div class="row">
+        <div class="field"><label for="lab_id">Laboratory</label><select id="lab_id" name="lab_id" required>{% for l in labs %}<option value="{{ l.id }}" {{ 'selected' if eq.lab_id == l.id }}>{{ l.name }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="category">Category</label><input id="category" name="category" list="cats" required value="{{ eq.category or '' }}"><datalist id="cats">{% for c in categories %}<option>{{ c }}</option>{% endfor %}</datalist></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="manufacturer">Manufacturer</label><input id="manufacturer" name="manufacturer" value="{{ eq.manufacturer or '' }}"></div>
+        <div class="field"><label for="model">Model</label><input id="model" name="model" value="{{ eq.model or '' }}"></div>
+      </div>
+      <div class="field"><label for="specification">Specification</label><input id="specification" name="specification" value="{{ eq.specification or '' }}"></div>
+      <div class="field"><label for="keywords">Search keywords <span class="muted">(comma-separated)</span></label><input id="keywords" name="keywords" value="{{ eq.keywords|map(attribute='word')|join(', ') if eq.id else '' }}"></div>
+      <div class="field" style="margin:0"><label for="notes">Notes</label><textarea id="notes" name="notes">{{ eq.notes or '' }}</textarea></div>
+    </div></div>
+
+    <div class="panel"><div class="panel-head"><h2>{{ icon('layers') }} Stock &amp; unit condition</h2><span class="small muted">Damaged units are excluded from booking</span></div><div class="panel-body">
+      <div class="unit-row">
+        <div class="u-name"><i style="background:var(--navy-700)"></i><div>Total units in stock<small>Physical units held</small></div></div>
+        <div class="stepper"><button type="button" data-step="quantity" data-d="-1">−</button><input type="number" name="quantity" min="0" value="{{ eq.quantity or 0 }}" data-u="quantity" required><button type="button" data-step="quantity" data-d="1">+</button></div>
+      </div>
+      <div class="quick"><button type="button" data-quick="Functional">All working</button><button type="button" data-quick="Damaged">All damaged</button><button type="button" data-quick="Unknown">Reset to not inspected</button></div>
+      {% for key, label, sub, cls, val in [('functional','Working','Fully functional','functional', eq.units_functional),('partial','Partially functional','Usable with limitations','partially-functional', eq.units_partial),('damaged','Damaged','Out of service','damaged', eq.units_damaged)] %}
+      <div class="unit-row">
+        <div class="u-name"><i class="u-{{ cls }}"></i><div>{{ label }}<small>{{ sub }}</small></div></div>
+        <div class="stepper"><button type="button" data-step="{{ key }}" data-d="-1">−</button><input type="number" name="{{ key }}" min="0" value="{{ val or 0 }}" data-u="{{ key }}"><button type="button" data-step="{{ key }}" data-d="1">+</button></div>
+      </div>
+      {% endfor %}
+      <div class="unit-row"><div class="u-name"><i class="u-unknown"></i><div>Not yet inspected<small>Calculated automatically</small></div></div><b data-ud-unknown style="min-width:110px;text-align:center">{{ eq.units_unknown }}</b></div>
+      <div class="unitbar lg" data-ud-bar style="margin-top:8px"></div>
+      <div class="unit-total"><span data-ud-msg>Counts add up correctly.</span><b data-ud-sum></b></div>
+    </div></div>
+
+    <div class="panel"><div class="panel-head"><h2>{{ icon('bookmark') }} Booking &amp; access</h2></div><div class="panel-body">
+      <div class="row">
+        <div class="field"><label for="access_level">Access</label><select id="access_level" name="access_level">{% for a in access_levels %}<option {{ 'selected' if eq.access_level == a }}>{{ a }}</option>{% endfor %}</select>
+          <div class="hint">“Research only” items are not bookable by students.</div></div>
+        <div class="field" style="display:flex;align-items:center"><label class="checkbox" style="margin:14px 0 0"><input type="checkbox" name="bookable" value="1" {{ 'checked' if eq.bookable }}> Available for student booking</label></div>
+      </div>
+    </div></div>
+
+    <div class="panel"><div class="panel-head"><h2>{{ icon('eye') }} Image</h2></div><div class="panel-body">
+      <div class="field"><label for="image_path">Image URL or static path</label><input id="image_path" name="image_path" value="{{ eq.image_path or '' }}" placeholder="https://manufacturer.example/product.jpg">
+        <div class="hint">Use a manufacturer or catalogue image you have rights to use; leave blank for the category illustration.</div></div>
+      <div class="field" style="margin:0"><label for="image_credit">Image credit / licence</label><input id="image_credit" name="image_credit" value="{{ eq.image_credit or '' }}" placeholder="e.g. © Manufacturer, used with permission"></div>
+    </div></div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-primary" type="submit" data-ud-save><span class="spinner"></span>{{ icon('check') }} Save equipment</button>
+      <a class="btn btn-ghost" href="{{ url_for('staff.inventory') }}">Cancel</a>
+    </div>
+  </div>
+  <aside class="stack">
+    <div class="panel" style="overflow:hidden"><div class="eq-hero-img" style="border:0;border-radius:0">{{ eq_image(eq) }}</div></div>
+    {% if eq.source_text %}<div class="panel"><div class="panel-head"><h2>Source record</h2></div><div class="panel-body"><div class="source-note"><span class="mono">{{ eq.lab.source_file }}</span>{% if eq.source_ref %} — {{ eq.source_ref }}{% endif %}<br>“{{ eq.source_text }}”</div></div></div>{% endif %}
+    {% if eq.id %}
+    <div class="panel"><div class="panel-head"><h2>Condition history</h2></div>
+      {% for h in history %}<div class="attn-item" style="display:block"><div class="small"><span class="muted">{{ h.old_condition }}</span><br>→ <b>{{ h.new_condition }}</b></div><div class="small muted">{{ h.changed_by.full_name if h.changed_by else '—' }} · {{ h.changed_at|localdt }}</div></div>
+      {% else %}<div class="empty" style="padding:20px">No changes recorded yet.</div>{% endfor %}
+    </div>
+    {% endif %}
+  </aside>
+</div>
+</form>
+{% if eq.id %}
+<form class="panel" method="post" action="{{ url_for('staff.delete_equipment', eq_id=eq.id) }}" data-confirm="Permanently delete this equipment record?" style="margin-top:16px">
+  <div class="panel-body" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div><b>Delete this record</b><div class="small muted">Only possible when it has no active bookings.</div></div>
+    <button class="btn btn-danger" type="submit">{{ icon('trash') }} Delete</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

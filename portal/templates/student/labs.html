@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, lab_state, unitbar with context %}
+{% block title %}Laboratories{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><span class="eyebrow">Laboratories</span><h1>Laboratories</h1>
+  <p>Laboratory names and rooms as maintained by lab staff, with inventory size, unit condition and current accessibility.</p></div>
+</div>
+<div class="grid cols-3">
+{% for lab in labs %}
+  {% set s = counts[lab.id] %}
+  <a class="card lab-card fade-up" href="{{ url_for('main.lab_detail', code=lab.code) }}">
+    <div class="lab-top">
+      <div class="lab-icon">{{ icon('lab','lg') }}</div>
+      <div><h3>{{ lab.name }}</h3>
+        <div class="small {{ 'room-missing' if not lab.room_number }}">{{ icon('pin') }} {{ lab.room_display }}{% if lab.building %} · {{ lab.building }}{% endif %}</div></div>
+    </div>
+    <p class="small muted" style="margin:0">{{ lab.description }}</p>
+    <div class="lab-meta"><span>{{ icon('box') }} {{ s.records }} records</span><span>{{ icon('layers') }} {{ s.quantity }} units</span></div>
+    {{ unitbar(s.units, s.quantity) }}<div class="small muted">{{ s.units['Functional'] }} working · {{ s.units['Damaged'] }} damaged · {{ s.units['Unknown'] }} not inspected</div>
+    <div class="lab-meta">{{ lab_state(statuses[lab.id]) }} <span>View lab {{ icon('arrow') }}</span></div>
+  </a>
+{% endfor %}
+</div>
+{% endblock %}

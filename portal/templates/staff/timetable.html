@@ -1,0 +1,37 @@
+{% extends "staff/layout.html" %}
+{% from "partials/macros.html" import icon with context %}
+{% block title %}Timetable{% endblock %}
+{% block crumb %}Timetable{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1 style="margin:0">Timetable</h1><p>Only enter slots you have verified against an official schedule; record where each was verified.</p></div>
+  <a class="btn btn-ghost" href="{{ url_for('main.timetable') }}" target="_blank">{{ icon('eye') }} Student view</a></div>
+<div class="split">
+  <div class="stack">
+    {% for lab in labs if not sel or lab.id == sel %}
+    <div class="panel">
+      <div class="panel-head"><h2>{{ lab.name }}</h2><span class="small {{ 'room-missing' if not lab.room_number }}">{{ lab.room_display }}</span></div>
+      {% if lab.timetable %}
+      <div class="table-wrap"><table class="data"><thead><tr><th>Day</th><th>Time</th><th>Type</th><th>Activity</th><th>Verified against</th><th></th></tr></thead><tbody>
+      {% for e in lab.timetable %}<tr><td>{{ e.day_name }}</td><td class="mono">{{ e.start_time.strftime('%H:%M') }}–{{ e.end_time.strftime('%H:%M') }}</td>
+        <td><span class="badge {{ {'Class':'lab-state-class','Reserved':'lab-state-reserved','Open Access':'lab-state-open'}[e.activity_type] }}">{{ e.activity_type }}</span></td>
+        <td>{{ e.title or '—' }}</td><td class="small">{{ e.verified_source }}</td>
+        <td><form method="post" action="{{ url_for('staff.delete_slot', entry_id=e.id) }}" data-confirm="Remove this slot?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-danger btn-sm" title="Remove">{{ icon('trash') }}</button></form></td></tr>{% endfor %}
+      </tbody></table></div>
+      {% else %}<div class="empty">{{ icon('calendar') }}No timetable provided — students see “Schedule not provided”.</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <form class="panel panel-body sticky" method="post" data-loading-form>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>{{ icon('plus') }} Add slot</h2>
+    <div class="field"><label for="lab_id">Laboratory</label><select id="lab_id" name="lab_id" required>{% for l in labs %}<option value="{{ l.id }}" {{ 'selected' if sel == l.id }}>{{ l.name }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Days</label><div class="days-picker">{% for d in days %}<label><input type="checkbox" name="days" value="{{ loop.index0 }}"> {{ d[:3] }}</label>{% endfor %}</div></div>
+    <div class="row"><div class="field"><label for="start">Start <span class="muted">(24 h)</span></label><input id="start" class="clock-input mono" type="text" name="start" value="00:00" inputmode="numeric" autocomplete="off" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" required data-clock></div><div class="field"><label for="end">End <span class="muted">(24 h)</span></label><input id="end" class="clock-input mono" type="text" name="end" value="00:00" inputmode="numeric" autocomplete="off" maxlength="5" pattern="([01][0-9]|2[0-3]):[0-5][0-9]" required data-clock></div></div>
+    <p class="small muted" style="margin:-6px 0 12px">Click a clock and type the time with the number keys, e.g. <span class="mono">0930</span> → 09:30. ←/→ move, ↑/↓ change a digit, Backspace clears.</p>
+    <div class="field"><label for="activity_type">Type</label><select id="activity_type" name="activity_type">{% for t in types %}<option>{{ t }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="title">Activity / course <span class="muted">(optional)</span></label><input id="title" name="title" maxlength="160" placeholder="e.g. ECN-xxx Lab, Group A"></div>
+    <div class="field"><label for="verified_source">Verified against</label><input id="verified_source" name="verified_source" required minlength="3" placeholder="e.g. Dept. timetable, Autumn 2026"></div>
+    <button class="btn btn-accent btn-block" type="submit"><span class="spinner"></span>{{ icon('plus') }} Add to timetable</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+S.No.,Item,Nos.,Notes
+1,Arduino Uno R3,10,
+2,5V Relay Module,25,
+3,H-Bridge Stepper Motor Driver,30,
+4,Stepper Motor Driver,20,
+5,Distance Sensor,12,
+6,GPS Module,15,"""GPRS"" crossed out in original"
+7,SIM900A GSM/GPRS Module,4,
+8,PMOD GPS,9,old
+9,PMOD WiFi,9,old
+10,PMOD Temp Sensor,9,old
+11,PMOD Keypad,7,old
+12,PMOD LCD 16x2,6,old
+13,MG995 Servo Motor,15,
+14,Raspberry Pi 3,4,
+15,Raspberry Pi Pico 2W,10,
+16,ESP8266 Wi-Fi Development Board,23,
+17,DragonBoard 410C,2,
+18,CMOD A7-35T FPGA,5,
+19,Arduino Uno R3,15,
+20,Arduino Nano 33,17,
+21,Arduino Due,5,
+22,Line Following Robot Kit,10,
+23,Stepping Motor,10,

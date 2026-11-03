@@ -1,0 +1,101 @@
+{% extends "staff/layout.html" %}
+{% from "partials/macros.html" import icon, cond_badge, status_badge, lab_state, unitbar, unit_legend with context %}
+{% block title %}Staff dashboard{% endblock %}
+{% block crumb %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h1 style="margin:0">Good {{ 'morning' if now_hour < 12 else ('afternoon' if now_hour < 17 else 'evening') }}, {{ current_user.full_name.split()[0] }}</h1>
+    <p>Live figures from the inventory database · {{ stats.records }} equipment records across {{ breakdown|length }} laboratories.</p></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a class="btn btn-ghost" href="{{ url_for('staff.inventory', has='unverified') }}">{{ icon('search') }} Inspect units</a>
+    <a class="btn btn-primary" href="{{ url_for('staff.edit_equipment') }}">{{ icon('plus') }} Add equipment</a>
+  </div>
+</div>
+
+{% set u = stats.units %}
+<div class="kpi-grid" style="margin-bottom:16px">
+  <a class="kpi" href="{{ url_for('staff.inventory') }}"><div class="k-label">{{ icon('box') }} Records</div><div class="k-value" data-stat="records">{{ stats.records }}</div><div class="k-sub">equipment entries</div></a>
+  <a class="kpi" href="{{ url_for('staff.inventory') }}"><div class="k-label">{{ icon('layers') }} Total units</div><div class="k-value" data-stat="quantity">{{ stats.quantity }}</div><div class="k-sub">physical units in stock</div></a>
+  <a class="kpi" href="{{ url_for('staff.inventory', status='Functional') }}"><div class="k-label"><i class="u-functional"></i> Working</div><div class="k-value" data-stat="u-functional">{{ u['Functional'] }}</div><div class="k-sub">units fully functional</div></a>
+  <a class="kpi" href="{{ url_for('staff.inventory', status='Mixed') }}"><div class="k-label"><i class="u-partially-functional"></i> Partial</div><div class="k-value" data-stat="u-partial">{{ u['Partially Functional'] }}</div><div class="k-sub">units usable with limits</div></a>
+  <a class="kpi" href="{{ url_for('staff.inventory', has='damaged') }}"><div class="k-label"><i class="u-damaged"></i> Damaged</div><div class="k-value" data-stat="u-damaged">{{ u['Damaged'] }}</div><div class="k-sub">units in {{ stats.records_with_damage }} record{{ '' if stats.records_with_damage == 1 else 's' }}</div></a>
+  <a class="kpi" href="{{ url_for('staff.inventory', has='unverified') }}"><div class="k-label"><i class="u-unknown"></i> Not inspected</div><div class="k-value" data-stat="u-unknown">{{ u['Unknown'] }}</div><div class="k-sub">units awaiting inspection</div></a>
+</div>
+
+<div class="panel" style="margin-bottom:16px">
+  <div class="panel-body">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <b>Inspection progress</b><span class="small muted">{{ stats.inspected_pct }}% of units have a recorded condition</span>
+    </div>
+    <div class="inspect-meter" style="margin-top:10px">{{ unitbar(u, stats.quantity, 'lg') }}</div>
+    {{ unit_legend(u) }}
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom:16px">
+  <div class="panel-head"><h2>{{ icon('lab') }} Units by laboratory</h2><a class="small" href="{{ url_for('staff.labs') }}">Manage laboratories {{ icon('arrow') }}</a></div>
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th>Laboratory</th><th class="num">Records</th><th class="num">Units</th><th class="num">Working</th><th class="num">Partial</th><th class="num">Damaged</th><th class="num">Not inspected</th><th style="min-width:160px">Condition</th></tr></thead>
+    <tbody>
+    {% for row in breakdown %}{% set lu = row.units %}
+    <tr>
+      <td style="min-width:170px"><a href="{{ url_for('staff.inventory', lab=row.lab.id) }}"><b>{{ row.lab.name }}</b></a><div class="small muted">{{ row.lab.room_display }}</div></td>
+      <td class="num">{{ row.records }}</td><td class="num"><b>{{ row.quantity }}</b></td>
+      <td class="num"><span class="num-pill f {{ 'zero' if not lu['Functional'] }}">{{ lu['Functional'] }}</span></td>
+      <td class="num"><span class="num-pill p {{ 'zero' if not lu['Partially Functional'] }}">{{ lu['Partially Functional'] }}</span></td>
+      <td class="num"><a href="{{ url_for('staff.inventory', lab=row.lab.id, has='damaged') }}"><span class="num-pill d {{ 'zero' if not lu['Damaged'] }}">{{ lu['Damaged'] }}</span></a></td>
+      <td class="num"><span class="num-pill u {{ 'zero' if not lu['Unknown'] }}">{{ lu['Unknown'] }}</span></td>
+      <td>{{ unitbar(lu, row.quantity) }}</td>
+    </tr>
+    {% endfor %}
+    <tr><td><b>All laboratories</b></td><td class="num"><b>{{ stats.records }}</b></td><td class="num"><b>{{ stats.quantity }}</b></td>
+      <td class="num"><b>{{ u['Functional'] }}</b></td><td class="num"><b>{{ u['Partially Functional'] }}</b></td><td class="num"><b>{{ u['Damaged'] }}</b></td><td class="num"><b>{{ u['Unknown'] }}</b></td><td>{{ unitbar(u, stats.quantity) }}</td></tr>
+    </tbody>
+  </table></div>
+</div>
+
+<div class="grid cols-2" style="gap:16px">
+  <div class="stack" style="--gap:16px">
+    <div class="panel">
+      <div class="panel-head"><h2>{{ icon('clock') }} Awaiting confirmation</h2><a class="small" href="{{ url_for('staff.bookings', status='Pending') }}">All pending {{ icon('arrow') }}</a></div>
+      {% if pending %}<div class="table-wrap"><table class="data"><tbody>
+      {% for b in pending %}<tr>
+        <td><b>{{ b.equipment.name }}</b><div class="small muted">{{ b.user.full_name }} · {{ b.quantity }} unit(s) · <span class="mono">{{ b.reference }}</span></div></td>
+        <td class="small" style="white-space:nowrap">{{ b.booking_date.strftime('%a %d %b') }}<br><span class="mono">{{ b.start_time.strftime('%H:%M') }}–{{ b.end_time.strftime('%H:%M') }}</span></td>
+        <td style="white-space:nowrap;text-align:right">
+          <form class="inline" method="post" action="{{ url_for('staff.decide_booking', ref=b.reference) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="confirm"><input type="hidden" name="back" value="{{ request.path }}"><button class="btn btn-ok btn-sm" type="submit" title="Confirm">{{ icon('check') }}</button></form>
+          <form class="inline" method="post" action="{{ url_for('staff.decide_booking', ref=b.reference) }}" data-confirm="Decline booking {{ b.reference }}?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="reject"><input type="hidden" name="back" value="{{ request.path }}"><button class="btn btn-danger btn-sm" type="submit" title="Decline">{{ icon('x') }}</button></form>
+        </td></tr>{% endfor %}
+      </tbody></table></div>{% else %}<div class="empty">{{ icon('check-circle') }}No bookings are waiting for confirmation.</div>{% endif %}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>{{ icon('calendar') }} Today's bookings</h2><span class="small muted">{{ todays|length }}</span></div>
+      {% if todays %}<div class="table-wrap"><table class="data"><tbody>
+      {% for b in todays %}<tr><td class="mono small" style="white-space:nowrap">{{ b.start_time.strftime('%H:%M') }}–{{ b.end_time.strftime('%H:%M') }}</td><td>{{ b.equipment.name }}<div class="small muted">{{ b.user.full_name }} · {{ b.quantity }} unit(s)</div></td><td>{{ status_badge(b.status) }}</td></tr>{% endfor %}
+      </tbody></table></div>{% else %}<div class="empty">No bookings today.</div>{% endif %}
+    </div>
+  </div>
+  <div class="stack">
+    <div class="panel">
+      <div class="panel-head"><h2>{{ icon('alert') }} Needs attention</h2><a class="small" href="{{ url_for('staff.inventory', has='damaged') }}">All with damage {{ icon('arrow') }}</a></div>
+      {% for e in attention %}
+      <div class="attn-item"><img src="{{ img_src(e.image_path) }}" alt="">
+        <div class="grow"><b>{{ e.name }}</b><span class="small muted">{{ e.lab.name }} · {{ unit_summary(e) }}</span></div>
+        <button class="btn btn-ghost btn-sm" type="button" data-units='{{ {"url": url_for("staff.update_units", eq_id=e.id), "name": e.name, "lab": e.lab.name, "img": img_src(e.image_path), "q": e.quantity, "f": e.units_functional, "p": e.units_partial, "d": e.units_damaged}|tojson|forceescape }}'>Update</button></div>
+      {% else %}<div class="empty">{{ icon('check-circle') }}No damaged units recorded.</div>{% endfor %}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>{{ icon('wrench') }} Open issues</h2><a class="small" href="{{ url_for('staff.issues') }}">{{ open_issue_count }} open {{ icon('arrow') }}</a></div>
+      {% if open_issues %}<div class="table-wrap"><table class="data"><tbody>
+      {% for i in open_issues %}<tr><td><b>{{ i.title }}</b><div class="small muted">{{ i.equipment.name }} · {{ i.equipment.lab.name }}</div></td><td>{{ status_badge(i.status) }}</td><td class="small muted">{{ i.severity }}</td></tr>{% endfor %}
+      </tbody></table></div>{% else %}<div class="empty">{{ icon('check-circle') }}No open issues.</div>{% endif %}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>{{ icon('activity') }} Recent condition updates</h2></div>
+      {% for l in recent_changes %}<div class="attn-item" style="display:block"><b class="small">{{ l.equipment.name }}</b>
+        <div class="small muted">{{ l.old_condition }} → <span style="color:var(--ink)">{{ l.new_condition }}</span><br>{{ l.changed_by.full_name if l.changed_by else '—' }} · {{ l.changed_at|localdt }}</div></div>
+      {% else %}<div class="empty">No updates yet.</div>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

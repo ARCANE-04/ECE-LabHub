@@ -1,0 +1,39 @@
+{% from "partials/macros.html" import icon %}
+<dialog class="units" id="unitsDialog" aria-labelledby="udTitle">
+  <form method="post" data-units-form>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="back" value="{{ request.full_path }}">
+    <div class="d-head">
+      <img src="" alt="" data-ud-img>
+      <div><span class="eyebrow" style="margin:0" data-ud-lab></span><h2 id="udTitle" data-ud-name>Update units</h2>
+        <div class="small muted">Record how many units are in each condition. Damaged units can't be booked.</div></div>
+    </div>
+    <div class="d-body">
+      <div class="unit-row">
+        <div class="u-name"><i style="background:var(--navy-700)"></i><div>Total units in stock<small>Physical units held for this record</small></div></div>
+        <div class="stepper"><button type="button" data-step="quantity" data-d="-1" aria-label="Decrease total">−</button><input type="number" name="quantity" min="0" inputmode="numeric" data-u="quantity"><button type="button" data-step="quantity" data-d="1" aria-label="Increase total">+</button></div>
+      </div>
+      <div class="quick" aria-label="Quick set">
+        <button type="button" data-quick="Functional">All working</button>
+        <button type="button" data-quick="Damaged">All damaged</button>
+        <button type="button" data-quick="Unknown">Reset to not inspected</button>
+      </div>
+      {% for key, label, sub, cls in [('functional','Working','Fully functional, ready for use','functional'),('partial','Partially functional','Usable with limitations','partially-functional'),('damaged','Damaged','Out of service — not bookable','damaged')] %}
+      <div class="unit-row">
+        <div class="u-name"><i class="u-{{ cls }}"></i><div>{{ label }}<small>{{ sub }}</small></div></div>
+        <div class="stepper"><button type="button" data-step="{{ key }}" data-d="-1" aria-label="Decrease {{ label }}">−</button><input type="number" name="{{ key }}" min="0" inputmode="numeric" data-u="{{ key }}"><button type="button" data-step="{{ key }}" data-d="1" aria-label="Increase {{ label }}">+</button></div>
+      </div>
+      {% endfor %}
+      <div class="unit-row">
+        <div class="u-name"><i class="u-unknown"></i><div>Not yet inspected<small>Calculated: total minus the counts above</small></div></div>
+        <b data-ud-unknown style="font-size:1.1rem;min-width:110px;text-align:center">0</b>
+      </div>
+      <div class="unitbar lg" data-ud-bar style="margin-top:8px"></div>
+      <div class="unit-total"><span data-ud-msg>Counts add up correctly.</span><b data-ud-sum></b></div>
+    </div>
+    <div class="d-foot">
+      <button type="button" class="btn btn-ghost" data-ud-close>Cancel</button>
+      <button type="submit" class="btn btn-primary" data-ud-save><span class="spinner"></span>{{ icon('check') }} Save unit condition</button>
+    </div>
+  </form>
+</dialog>

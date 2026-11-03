@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, cond_badge, lab_state, eq_image, eq_card, unitbar, unit_legend with context %}
+{% block title %}{{ eq.name }}{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="{{ url_for('main.equipment_list') }}">Equipment</a> / <a href="{{ url_for('main.lab_detail', code=eq.lab.code) }}">{{ eq.lab.name }}</a> / {{ eq.name }}</div>
+<div class="split">
+  <div class="stack">
+    <div class="card">
+      <div class="grid cols-2" style="align-items:start">
+        <div class="eq-hero-img">{{ eq_image(eq) }}
+          <span class="img-note">{% if eq.image_kind == 'photo' %}Photo{% if eq.image_credit %} · {{ eq.image_credit }}{% endif %}{% else %}Representative illustration of a {{ eq.category|lower }}{% endif %}</span></div>
+        <div>
+          <span class="eyebrow">{{ eq.category }}</span>
+          <h1 style="font-size:1.6rem">{{ eq.name }}</h1>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            {{ cond_badge(eq.condition) }}
+            {% if eq.access_level == 'Research only' %}<span class="badge access-research">Research only</span>
+            {% elif eq.access_level != 'Not specified' %}<span class="badge plain tag" style="margin:0">{{ eq.access_level }}</span>{% endif %}
+          </div>
+          <dl class="specs">
+            <dt>Manufacturer</dt><dd>{{ eq.manufacturer or '—' }}</dd>
+            <dt>Model</dt><dd>{{ eq.model or '—' }}</dd>
+            <dt>Specification</dt><dd>{{ eq.specification or '—' }}</dd>
+            <dt>Units</dt><dd><b>{{ eq.quantity }}</b> in stock{% if eq.units_damaged %} · <span style="color:var(--bad)">{{ eq.units_damaged }} out of service</span>{% endif %}</dd>
+            <dt>Laboratory</dt><dd><a href="{{ url_for('main.lab_detail', code=eq.lab.code) }}">{{ eq.lab.name }}</a></dd>
+            <dt>Room</dt><dd class="{{ 'room-missing' if not eq.lab.room_number }}">{{ eq.lab.room_display }}</dd>
+          </dl>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:14px;border:1px solid var(--line);border-radius:12px">
+        <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b class="small">Unit condition</b><span class="small muted">recorded by lab staff</span></div>
+        <div style="margin-top:8px">{{ unitbar(eq.unit_breakdown, eq.quantity, 'lg') }}</div>
+        {{ unit_legend(eq.unit_breakdown) }}
+      </div>
+      {% if eq.notes %}<div class="notice neutral" style="margin-top:16px">{{ icon('info') }} {{ eq.notes }}</div>{% endif %}
+      {% if eq.keywords %}<div style="margin-top:14px">{% for k in eq.keywords %}<a class="tag" href="{{ url_for('main.equipment_list', q=k.word) }}">{{ k.word }}</a>{% endfor %}</div>{% endif %}
+      <div class="source-note" style="margin-top:12px">Source: <span class="mono">{{ eq.lab.source_file }}</span>{% if eq.source_ref %}, {{ eq.source_ref }}{% endif %}{% if eq.source_text %} — “{{ eq.source_text }}”{% endif %}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>{{ icon('calendar') }} Bookings on {{ sel_date.strftime('%a %d %b %Y') }}</h2>
+        <form method="get" class="filters"><div class="field"><input type="date" name="date" value="{{ sel_date.isoformat() }}" min="{{ min_date.isoformat() }}" max="{{ max_date.isoformat() }}" onchange="this.form.submit()" aria-label="Date"></div></form>
+      </div>
+      {% if day_bookings %}
+      <div class="table-wrap"><table class="data"><thead><tr><th>Time</th><th class="num">Units held</th><th>Status</th></tr></thead><tbody>
+        {% for b in day_bookings %}<tr><td class="mono">{{ b.start_time.strftime('%H:%M') }}–{{ b.end_time.strftime('%H:%M') }}</td><td class="num">{{ b.quantity }} of {{ eq.quantity }}</td><td>{{ b.status }}</td></tr>{% endfor %}
+      </tbody></table></div>
+      {% else %}<p class="muted small" style="margin:0">No units are booked on this day.</p>{% endif %}
+    </div>
+
+    <div class="card" id="lab-timetable">
+      <div class="card-head">
+        <div><h2>{{ icon('calendar') }} {{ lab.name }} timetable</h2>
+          <div class="small muted">Check the lab's weekly schedule before booking — equipment cannot be booked during Class or Reserved slots.</div></div>
+        <a class="btn btn-ghost btn-sm" href="{{ url_for('main.timetable', lab=lab.code) }}" target="_blank">{{ icon('eye') }} Full view</a>
+      </div>
+      <div class="notice info small" style="margin-bottom:12px">{{ icon('info') }} Student bookings: {{ booking_hours }}. No bookings on Saturdays or Sundays.</div>
+      {% if not lab.timetable %}
+        <div class="tt-empty">{{ icon('calendar') }}<b>Schedule not provided.</b><br><span class="small">A verified timetable for {{ lab.name }} has not been provided yet. Contact the laboratory before visiting.</span></div>
+      {% else %}
+        {% include "partials/lab_timetable.html" %}
+      {% endif %}
+    </div>
+
+    <div class="card" id="report">
+      <details class="disclose" {{ 'open' if request.args.get('report') }}>
+        <summary>{{ icon('wrench') }} Report a problem with this equipment</summary>
+        {% if is_student %}
+        <form method="post" action="{{ url_for('main.report_issue', eq_id=eq.id) }}" style="margin-top:14px" data-loading-form>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="row">
+            <div class="field" style="flex:3 1 260px"><label for="itl">Short title</label><input id="itl" name="title" required minlength="4" maxlength="160" placeholder="e.g. Channel 2 shows no trace"></div>
+            <div class="field"><label for="isev">Severity</label><select id="isev" name="severity">{% for s in severities %}<option {{ 'selected' if s == 'Medium' }}>{{ s }}</option>{% endfor %}</select></div>
+          </div>
+          <div class="field"><label for="idesc">What happened?</label><textarea id="idesc" name="description" required minlength="10" placeholder="Describe the fault, the unit/serial if visible, and when you noticed it."></textarea></div>
+          <button class="btn btn-ghost" type="submit"><span class="spinner"></span>{{ icon('alert') }} Submit report</button>
+        </form>
+        {% else %}
+        <p class="small muted" style="margin:12px 0 0">Please <a href="{{ url_for('student_auth.login', next=request.path ~ '?report=1#report') }}">sign in with your student account</a> to report an issue.</p>
+        {% endif %}
+      </details>
+    </div>
+  </div>
+
+  <aside class="stack sticky">
+    <div class="card" id="book">
+      <div class="label small muted" style="font-weight:600;text-transform:uppercase;letter-spacing:.06em">Available right now</div>
+      <div class="avail-meter"><b>{{ now_avail.available }}</b><span class="muted">of {{ eq.usable_units }} usable unit{{ '' if eq.usable_units == 1 else 's' }}</span></div>
+      <div class="bar"><i style="width: {{ (now_avail.available / eq.usable_units * 100) if eq.usable_units else 0 }}%"></i></div>
+      <div class="small muted">{{ now_avail.booked }} booked now{% if eq.units_damaged %} · {{ eq.units_damaged }} damaged unit(s) excluded{% endif %}</div>
+      <hr class="divider">
+      <div class="small" style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span class="muted">Lab accessibility</span>{{ lab_state(lab_st) }}</div>
+      <p class="small muted" style="margin:6px 0 0">Laboratory accessibility comes from the lab timetable and is separate from equipment availability.</p>
+    </div>
+
+    <div class="card">
+      <h2>{{ icon('bookmark') }} Book Equipment</h2>
+      {% if blockers %}
+        <div class="notice bad">{{ icon('alert') }}<div><b>Not bookable</b><br>{{ blockers|join('; ') }}.</div></div>
+      {% elif is_staff %}
+        <div class="notice info">{{ icon('info') }} Staff accounts cannot place student bookings.</div>
+      {% elif not is_student %}
+        <p class="small muted">Sign in with your verified IIT Roorkee student account to book this equipment.</p>
+        <a class="btn btn-primary btn-block" href="{{ url_for('student_auth.login', next=request.path ~ '#book') }}">{{ icon('user') }} Student Login to book</a>
+      {% else %}
+        {% if eq.units_unknown and not eq.verified_usable_units %}<div class="notice warn small" style="margin-bottom:12px">{{ icon('info') }} These units haven't been inspected yet — your booking will be <b>Pending</b> until lab staff confirm it.</div>
+        {% elif eq.units_unknown %}<div class="notice info small" style="margin-bottom:12px">{{ icon('info') }} {{ eq.verified_usable_units }} inspected unit(s) confirm instantly; requests beyond that stay <b>Pending</b> for staff.</div>
+        {% elif eq.units_partial %}<div class="notice warn small" style="margin-bottom:12px">{{ icon('alert') }} {{ eq.units_partial }} unit(s) are partially functional — check with staff before use.</div>{% endif %}
+        <form method="post" action="{{ url_for('main.book', eq_id=eq.id) }}" data-booking-form data-weekdays="{{ booking_weekdays|join(',') }}" data-avail-url="{{ url_for('main.api_availability', eq_id=eq.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="field"><label for="bdate">Date</label><input id="bdate" type="date" name="date" required value="{{ sel_date.isoformat() }}" min="{{ min_date.isoformat() }}" max="{{ max_date.isoformat() }}"></div>
+          <div class="row">
+            <div class="field"><label for="bstart">Start</label><input id="bstart" type="time" name="start" required step="900" min="{{ config.BOOKING_DAY_START }}" max="{{ config.BOOKING_DAY_END }}"></div>
+            <div class="field"><label for="bend">End</label><input id="bend" type="time" name="end" required step="900" min="{{ config.BOOKING_DAY_START }}" max="{{ config.BOOKING_DAY_END }}"></div>
+          </div>
+          <div class="field"><label for="bqty">Units</label><input id="bqty" type="number" name="quantity" value="1" min="1" max="{{ [eq.usable_units, config.BOOKING_MAX_UNITS]|min }}" required></div>
+          <div class="field"><label for="bpurpose">Purpose <span class="muted">(optional)</span></label><input id="bpurpose" name="purpose" maxlength="300" placeholder="e.g. EC-xxx lab experiment, project work"></div>
+          <div class="hint small muted" style="margin:-6px 0 12px">{{ booking_hours }}; {{ config.BOOKING_MIN_MINUTES }} min to {{ config.BOOKING_MAX_HOURS }} h, up to {{ config.BOOKING_MAX_DAYS_AHEAD }} days ahead.</div>
+          <button type="button" class="btn btn-ghost btn-block" data-check-avail><span class="spinner"></span>{{ icon('search') }} Check availability</button>
+          <div class="result-box" data-avail-result></div>
+          <button type="submit" class="btn btn-accent btn-block" style="margin-top:10px"><span class="spinner"></span>{{ icon('check') }} Confirm booking</button>
+        </form>
+      {% endif %}
+    </div>
+  </aside>
+</div>
+
+{% if related %}
+<section class="section">
+  <div class="section-head"><h2>Other {{ eq.category|lower }} equipment</h2></div>
+  <div class="grid auto">{% for r in related %}{{ eq_card(r) }}{% endfor %}</div>
+</section>
+{% endif %}
+{% endblock %}

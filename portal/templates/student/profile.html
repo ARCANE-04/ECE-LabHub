@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import icon, status_badge with context %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="page-head"><div><span class="eyebrow">Student</span><h1>My Profile</h1></div>
+<a class="btn btn-ghost" href="{{ url_for('main.my_bookings') }}">{{ icon('bookmark') }} My Bookings</a></div>
+<div class="grid cols-3">
+  <div class="card">
+    <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px">
+      <div class="lab-icon" style="border-radius:50%;background:var(--gold-soft);color:var(--brick);font-weight:700;font-size:1.2rem">{{ current_user.full_name[:1] }}</div>
+      <div><h2 style="margin:0">{{ current_user.full_name }}</h2><span class="badge st-confirmed">Verified student</span></div>
+    </div>
+    <dl class="kv">
+      <dt>Email</dt><dd>{{ current_user.email }}</dd>
+      <dt>Enrollment no.</dt><dd class="mono">{{ current_user.enrollment_no or '—' }}</dd>
+      <dt>Department</dt><dd>{{ current_user.department or '—' }}</dd>
+      <dt>Verified on</dt><dd>{{ current_user.email_verified_at|localdt('%d %b %Y') }}</dd>
+      <dt>Last sign-in</dt><dd>{{ current_user.last_login_at|localdt }}</dd>
+    </dl>
+  </div>
+  <div class="card"><h2>Bookings</h2>
+    <div class="grid cols-2">{% for s in ['Pending','Confirmed','Completed','Cancelled'] %}<div><div class="small muted">{{ s }}</div><div class="stat"><div class="value">{{ counts.get(s, 0) }}</div></div></div>{% endfor %}</div>
+  </div>
+  <div class="card"><h2>Account security</h2>
+    <p class="small muted">Forgot or want to change your password? We'll email a single-use reset link to your institute address.</p>
+    <form method="post" action="{{ url_for('student_auth.forgot') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="email" value="{{ current_user.email }}">
+    <button class="btn btn-ghost" type="submit">{{ icon('lock') }} Email me a reset link</button></form>
+  </div>
+</div>
+<div class="card flush" style="margin-top:18px">
+  <div class="card-head" style="padding:16px 20px 0"><h2>Issues I reported</h2></div>
+  {% if issues %}<div class="table-wrap"><table class="data"><thead><tr><th>Reported</th><th>Equipment</th><th>Issue</th><th>Status</th><th>Staff note</th></tr></thead><tbody>
+  {% for i in issues %}<tr><td class="small">{{ i.created_at|localdt }}</td><td><a href="{{ url_for('main.equipment_detail', eq_id=i.equipment_id) }}">{{ i.equipment.name }}</a></td><td>{{ i.title }}</td><td>{{ status_badge(i.status) }}</td><td class="small">{{ i.staff_note or '—' }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<div class="empty">{{ icon('wrench') }}You haven't reported any issues.</div>{% endif %}
+</div>
+{% endblock %}

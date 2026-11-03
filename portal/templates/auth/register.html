@@ -1,0 +1,32 @@
+{% extends "auth/auth_base.html" %}
+{% set mode = 'register' %}
+{% block title %}Create {{ role }} account{% endblock %}
+{% macro text_field(name, label, errors, value, attrs='', hint=None) -%}
+<div class="field {{ 'invalid' if errors.get(name) }}"><label for="{{ name }}">{{ label|safe }}</label>
+  <input id="{{ name }}" name="{{ name }}" value="{{ value }}" {{ attrs|safe }}>
+  {% if hint %}<div class="hint">{{ hint }}</div>{% endif %}
+  <div class="error" data-error-for="{{ name }}" {{ '' if errors.get(name) else 'hidden' }}>{% if errors.get(name) %}{{ errors.get(name) }}{% endif %}</div></div>
+{%- endmacro %}
+{% block form %}
+<h1 style="font-size:1.45rem">{{ 'Staff registration' if role == 'staff' else 'Create your account' }}</h1>
+<p class="small muted">{% if role == 'staff' %}You need the access code issued to you by the portal administrator.{% else %}Open to IIT Roorkee students. We'll send a verification link to your institute email.{% endif %}</p>
+<form method="post" novalidate data-validate data-loading-form autocomplete="on">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if role == 'staff' %}
+    {{ text_field('access_code', 'Staff access code', errors, form.access_code, 'required class="code-input" placeholder="XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" maxlength="20"', 'Codes are single-purpose, time-limited and issued by an administrator.') }}
+  {% endif %}
+  {{ text_field('full_name', 'Full name', errors, form.full_name, 'required minlength="2" autocomplete="name"') }}
+  {{ text_field('email', 'Institute email', errors, form.email, 'type="email" required autocomplete="email" data-iitr-email placeholder="name@' ~ ('iitr.ac.in' if role == 'staff' else 'branch.iitr.ac.in') ~ '"') }}
+  <div class="row">
+    {% if role == 'staff' %}
+      {{ text_field('designation', 'Designation', errors, form.designation, 'required placeholder="e.g. Lab Technician"') }}
+    {% else %}
+      {{ text_field('enrollment_no', 'Enrollment no.', errors, form.enrollment_no, 'required pattern="[A-Za-z0-9/\\-]{4,20}"') }}
+    {% endif %}
+    {{ text_field('department', 'Department <span class="muted">(optional)</span>', errors, form.department, '') }}
+  </div>
+  {{ password_field('password', 'Password', 'new-password', errors.password, 'At least 10 characters with letters and numbers.') }}
+  {{ password_field('password2', 'Confirm password', 'new-password', errors.password2) }}
+  <button class="btn {{ 'btn-accent' if role == 'staff' else 'btn-primary' }} btn-block" type="submit"><span class="spinner"></span>{{ icon('check') }} Create account</button>
+</form>
+{% endblock %}

@@ -1,0 +1,87 @@
+{% from "partials/macros.html" import icon, brand with context %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Lab Equipment Portal{% endblock %} · IIT Roorkee</title>
+  <meta name="description" content="Discover, check access to, and book laboratory equipment at IIT Roorkee.">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+{% include "partials/icons.html" %}
+<div class="page-loader" id="pageLoader"></div>
+{% block body %}
+<div class="topbar"><div class="container">
+  <span>Laboratory equipment discovery, accessibility and booking</span>
+  <span><a href="https://www.iitr.ac.in" rel="noopener" target="_blank">iitr.ac.in</a></span>
+</div></div>
+<header class="site-header">
+  <div class="container header-row">
+    {{ brand() }}
+    <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" data-nav-toggle>{{ icon('menu') }}</button>
+    <nav class="main-nav" id="mainNav" aria-label="Main">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('main.home') }}" class="{{ 'active' if nav == 'home' }}">{{ 'Dashboard' if is_student else 'Home' }}</a>
+        <a href="{{ url_for('main.labs') }}" class="{{ 'active' if nav == 'labs' }}">Laboratories</a>
+        <a href="{{ url_for('main.equipment_list') }}" class="{{ 'active' if nav == 'equipment' }}">Equipment</a>
+        <a href="{{ url_for('main.timetable') }}" class="{{ 'active' if nav == 'timetable' }}">Timetable</a>
+        {% if is_student %}<a href="{{ url_for('main.my_bookings') }}" class="{{ 'active' if nav == 'bookings' }}">My Bookings</a>{% endif %}
+        <a href="{{ url_for('main.about') }}" class="{{ 'active' if nav == 'about' }}">About</a>
+      {% endif %}
+      <div class="nav-right">
+        {% if is_student %}
+          <a class="user-chip" href="{{ url_for('main.profile') }}" title="My profile"><span class="avatar">{{ current_user.full_name[:1] }}</span>{{ current_user.full_name.split()[0] }}</a>
+          <form class="inline" method="post" action="{{ url_for('student_auth.logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="linklike" type="submit" style="color:#d6e0ee;padding:8px" title="Sign out">{{ icon('logout') }}<span class="sr-only">Sign out</span></button>
+          </form>
+        {% elif is_staff %}
+          <a class="btn-staff" href="{{ url_for('staff.dashboard') }}">{{ icon('shield') }} Staff console</a>
+        {% else %}
+          <a class="btn-student" href="{{ url_for('student_auth.login') }}">{{ icon('user') }} Sign in</a>
+        {% endif %}
+      </div>
+    </nav>
+  </div>
+</header>
+
+{% include "partials/flashes.html" %}
+{% block hero %}{% endblock %}
+<main>
+  <div class="container">{% block content %}{% endblock %}</div>
+</main>
+{% block after_main %}{% endblock %}
+
+<footer class="site-footer">
+  <div class="container">
+    <div>
+      <h4>Lab Equipment Portal</h4>
+      <p>Find laboratory instruments, check laboratory accessibility and book equipment. Inventory data is maintained by laboratory staff.</p>
+    </div>
+    <div>
+      <h4>Explore</h4>
+      <ul>
+        <li><a href="{{ url_for('main.labs') }}">Laboratories</a></li>
+        <li><a href="{{ url_for('main.equipment_list') }}">Equipment catalogue</a></li>
+        <li><a href="{{ url_for('main.timetable') }}">Laboratory timetable</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Accounts</h4>
+      <ul>
+        <li><a href="{{ url_for('student_auth.login') }}">Student sign in</a></li>
+        <li><a href="{{ url_for('student_auth.register') }}">Create a student account</a></li>
+        <li><a href="{{ url_for('staff_auth.login') }}">Staff sign in</a></li>
+      </ul>
+    </div>
+    <div class="legal"><span>Indian Institute of Technology Roorkee, Roorkee, Uttarakhand</span><span>Equipment images are representative illustrations unless marked as a photo.</span></div>
+  </div>
+</footer>
+{% endblock %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

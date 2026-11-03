@@ -1,0 +1,40 @@
+    {% set used_days = lab.timetable|map(attribute='day_of_week')|list %}
+    {% set day_idx = [0,1,2,3,4,5] + ([6] if 6 in used_days else []) %}
+    {% set start_h = hours[0] %}
+    <div class="table-wrap">
+    <div class="tt" style="--days: {{ day_idx|length }}">
+      <div class="tt-head"></div>
+      {% for d in day_idx %}<div class="tt-head {{ 'today' if d == now.weekday() }}">{{ days[d][:3] }}</div>{% endfor %}
+      <div class="tt-times">{% for h in hours %}<div>{{ '%02d:00'|format(h) }}</div>{% endfor %}</div>
+      {% for d in day_idx %}
+      <div class="tt-col" style="height: calc(var(--hour-h) * {{ hours|length }})">
+        {% if booking_breaks is defined %}
+          {% if d not in booking_weekdays %}
+          <div class="tt-slot tt-nobook" style="top:0; height: calc(var(--hour-h) * {{ hours|length }} - 3px)" title="No student bookings on {{ days[d] }}"><b>No bookings</b>{{ days[d] }}</div>
+          {% else %}
+          {% for bs, be in booking_breaks %}
+          {% set top = ((bs.hour * 60 + bs.minute) - start_h * 60) / 60 %}
+          {% set ht = ((be.hour * 60 + be.minute) - (bs.hour * 60 + bs.minute)) / 60 %}
+          <div class="tt-slot tt-nobook" style="top: calc(var(--hour-h) * {{ top }}); height: calc(var(--hour-h) * {{ ht }} - 3px)" title="Lunch break - no bookings"><b>Lunch</b>{{ bs.strftime('%H:%M') }}–{{ be.strftime('%H:%M') }}</div>
+          {% endfor %}
+          {% endif %}
+        {% endif %}
+        {% for e in lab.timetable if e.day_of_week == d %}
+          {% set top = ((e.start_time.hour * 60 + e.start_time.minute) - start_h * 60) / 60 %}
+          {% set ht = ((e.end_time.hour * 60 + e.end_time.minute) - (e.start_time.hour * 60 + e.start_time.minute)) / 60 %}
+          <div class="tt-slot {{ e.activity_type|cond_slug }}" style="top: calc(var(--hour-h) * {{ top }}); height: calc(var(--hour-h) * {{ ht }} - 3px)" title="{{ e.activity_type }} · {{ e.title or '' }} · verified: {{ e.verified_source }}">
+            <b>{{ e.title or e.activity_type }}</b>{{ e.start_time.strftime('%H:%M') }}–{{ e.end_time.strftime('%H:%M') }}<br><span style="opacity:.8">{{ e.activity_type }}</span>
+          </div>
+        {% endfor %}
+        {% if d == now.weekday() and now.hour >= start_h and now.hour < hours[-1] + 1 %}
+          <div class="tt-now" style="top: calc(var(--hour-h) * {{ ((now.hour * 60 + now.minute) - start_h * 60) / 60 }})" title="Now"></div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    </div>
+    <details class="disclose" style="margin-top:12px"><summary class="small">{{ icon('list') }} List view &amp; verification sources</summary>
+      <div class="table-wrap" style="margin-top:8px"><table class="data"><thead><tr><th>Day</th><th>Start</th><th>End</th><th>Type</th><th>Activity</th><th>Verified against</th></tr></thead><tbody>
+      {% for e in lab.timetable %}<tr><td>{{ e.day_name }}</td><td class="mono">{{ e.start_time.strftime('%H:%M') }}</td><td class="mono">{{ e.end_time.strftime('%H:%M') }}</td><td>{{ e.activity_type }}</td><td>{{ e.title or '—' }}</td><td class="small">{{ e.verified_source }}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </details>

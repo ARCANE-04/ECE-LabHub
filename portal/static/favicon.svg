@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Lab Equipment Portal logo"><title>Lab Equipment Portal</title>
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9a62e"/><stop offset="1" stop-color="#b4532f"/></linearGradient></defs>
+<rect x="2" y="2" width="60" height="60" rx="15" fill="url(#g)"/>
+<rect x="9" y="12" width="46" height="32" rx="6" fill="#0b2545"/>
+<path d="M9 22h46M9 34h46M24.3 12v32M39.7 12v32" stroke="#1d3b5a" stroke-width="1"/>
+<path d="M12 33 C 17 33, 18 19, 23 19 S 29 37, 34 37 S 40 23, 45 23 S 50 29, 52 29" fill="none" stroke="#4fd1a5" stroke-width="3" stroke-linecap="round"/>
+<circle cx="45" cy="23" r="2.6" fill="#f2d58f"/>
+<rect x="20" y="49" width="24" height="5" rx="2.5" fill="#0b2545"/><rect x="14" y="47" width="5" height="9" rx="2" fill="#0b2545"/><rect x="45" y="47" width="5" height="9" rx="2" fill="#0b2545"/>
+</svg>

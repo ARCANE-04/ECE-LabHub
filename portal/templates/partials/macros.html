@@ -1,0 +1,84 @@
+{% macro icon(name, cls="") -%}
+<svg class="icon {{ cls }}" aria-hidden="true"><use href="#i-{{ name }}"/></svg>
+{%- endmacro %}
+
+{% macro cond_badge(c) -%}
+<span class="badge cond-{{ c|cond_slug }}" title="Overall condition">{{ {'Unknown': 'Not inspected', 'Mixed': 'Mixed condition'}.get(c, c) }}</span>
+{%- endmacro %}
+
+{% macro unitbar(b, total, cls="") -%}
+<div class="unitbar {{ cls }}" role="img" aria-label="{{ b['Functional'] }} working, {{ b['Partially Functional'] }} partial, {{ b['Damaged'] }} damaged, {{ b['Unknown'] }} not inspected">
+  {% for c in ['Functional','Partially Functional','Damaged','Unknown'] %}{% if total and b[c] %}<i class="u-{{ c|cond_slug }}" style="width: {{ (b[c] / total * 100)|round(2) }}%" title="{{ c }}: {{ b[c] }}"></i>{% endif %}{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro unit_legend(b) -%}
+<div class="unit-legend">
+  {% for c, label in [('Functional','Working'),('Partially Functional','Partial'),('Damaged','Damaged'),('Unknown','Not inspected')] %}
+  <span><i class="u-{{ c|cond_slug }}"></i>{{ label }} <b>{{ b[c] }}</b></span>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro status_badge(s) -%}
+<span class="badge st-{{ s|cond_slug }}">{{ s }}</span>
+{%- endmacro %}
+
+{% macro lab_state(st) -%}
+<span class="badge lab-state-{{ st.state }}" title="{{ st.detail }}">{{ st.label }}</span>
+{%- endmacro %}
+
+{% macro brand(light=True) -%}
+<a class="brand" href="{{ url_for('main.home') }}" aria-label="IIT Roorkee Lab Equipment Portal - home">
+  {% if iitr_logo_available %}
+    <img class="iitr-logo" src="{{ url_for('static', filename='img/iitr-logo.png') }}" alt="Indian Institute of Technology Roorkee logo">
+  {% endif %}
+  <span class="iitr-text"><b>IIT Roorkee</b><span>Indian Institute of Technology Roorkee</span></span>
+  <span class="portal">
+    <img src="{{ url_for('static', filename='img/portal-logo.svg') }}" alt="" width="40" height="40">
+    <span class="portal-name"><b>Lab Equipment Portal</b><span>Discover · Access · Book</span></span>
+  </span>
+</a>
+{%- endmacro %}
+
+{% macro eq_image(eq, cls="") -%}
+<img class="{{ 'photo' if eq.image_kind == 'photo' else '' }} {{ cls }}" src="{{ img_src(eq.image_path) }}"
+     alt="{{ eq.category }}{% if eq.image_kind != 'photo' %} (illustration){% endif %}" loading="lazy"
+     onerror="this.onerror=null;this.className='';this.src='{{ url_for('static', filename='img/equipment/fallback.svg') }}'">
+{%- endmacro %}
+
+{% macro eq_card(eq) -%}
+<a class="card eq-card fade-up" href="{{ url_for('main.equipment_detail', eq_id=eq.id) }}">
+  <div class="eq-media">
+    {{ eq_image(eq) }}
+    {{ cond_badge(eq.condition) }}
+    {% if eq.image_kind != 'photo' %}<span class="img-note">Representative illustration</span>{% endif %}
+  </div>
+  <div class="eq-body">
+    <h3>{{ eq.name }}</h3>
+    <div class="sub">{{ [eq.manufacturer, eq.model]|select|join(' · ') or eq.category }}{% if eq.specification %} — {{ eq.specification }}{% endif %}</div>
+    <div style="margin-top:6px">{{ unitbar(eq.unit_breakdown, eq.quantity) }}</div>
+    <div class="eq-foot">
+      <span>{{ icon('lab') }} {{ eq.lab.name }}</span>
+      <span><b>{{ eq.quantity }}</b> unit{{ '' if eq.quantity == 1 else 's' }}{% if eq.units_damaged %} · <span style="color:var(--bad)">{{ eq.units_damaged }} damaged</span>{% endif %}</span>
+    </div>
+  </div>
+</a>
+{%- endmacro %}
+
+{% macro password_field(name, label, autocomplete="current-password", error=None, hint=None) -%}
+<div class="field {{ 'invalid' if error }}">
+  <label for="{{ name }}">{{ label }}</label>
+  <div class="pw-wrap">
+    <input type="password" id="{{ name }}" name="{{ name }}" autocomplete="{{ autocomplete }}" required
+           {% if autocomplete == 'new-password' %}minlength="10"{% endif %}>
+    <button type="button" class="pw-toggle" data-toggle-password="{{ name }}" aria-label="Show password" aria-pressed="false">
+      <svg class="icon show" aria-hidden="true"><use href="#i-eye"/></svg>
+      <svg class="icon hide" aria-hidden="true" style="display:none"><use href="#i-eye-off"/></svg>
+    </button>
+  </div>
+  {% if hint %}<div class="hint">{{ hint }}</div>{% endif %}
+  {% if error %}<div class="error">{{ icon('alert') }} {{ error }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+

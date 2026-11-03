@@ -1,0 +1,25 @@
+{% extends "staff/layout.html" %}
+{% from "partials/macros.html" import icon, status_badge, cond_badge with context %}
+{% block title %}Bookings{% endblock %}
+{% block crumb %}Bookings{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1 style="margin:0">Bookings</h1><p>Confirm requests that rely on uninspected units, or cancel bookings when needed.</p></div>
+  <div class="seg">{% for s in [None,'Pending','Confirmed','Completed','Cancelled'] %}<a href="{{ url_for('staff.bookings', status=s) }}" class="{{ 'active' if sel_status == s }}">{{ s or 'All' }}</a>{% endfor %}</div></div>
+<div class="panel">
+{% if rows %}<div class="table-wrap"><table class="data">
+  <thead><tr><th>Reference</th><th>Student</th><th>Equipment</th><th>Date &amp; time</th><th class="num">Units</th><th>Status</th><th></th></tr></thead><tbody>
+  {% for b in rows %}<tr>
+    <td class="mono small">{{ b.reference }}</td>
+    <td>{{ b.user.full_name }}<div class="small muted">{{ b.user.email }}</div></td>
+    <td>{{ b.equipment.name }}<div class="small muted">{{ b.equipment.lab.name }} · {{ unit_summary(b.equipment) }}</div></td>
+    <td class="small" style="white-space:nowrap">{{ b.booking_date.strftime('%a %d %b %Y') }}<br><span class="mono">{{ b.start_time.strftime('%H:%M') }}–{{ b.end_time.strftime('%H:%M') }}</span></td>
+    <td class="num">{{ b.quantity }}</td>
+    <td>{{ status_badge(b.status) }}{% if b.status_note %}<div class="small muted" style="max-width:260px">{{ b.status_note }}</div>{% endif %}</td>
+    <td style="white-space:nowrap">{% if b.status == 'Pending' %}
+      <form class="inline" method="post" action="{{ url_for('staff.decide_booking', ref=b.reference) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="confirm"><input type="hidden" name="back" value="{{ request.full_path }}"><button class="btn btn-ok btn-sm">{{ icon('check') }} Confirm</button></form>{% endif %}
+      {% if b.status in ['Pending','Confirmed'] %}
+      <form class="inline" method="post" action="{{ url_for('staff.decide_booking', ref=b.reference) }}" data-confirm="Cancel booking {{ b.reference }}?"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="action" value="reject"><input type="hidden" name="back" value="{{ request.full_path }}"><button class="btn btn-danger btn-sm">{{ icon('x') }} {{ 'Decline' if b.status == 'Pending' else 'Cancel' }}</button></form>{% endif %}</td>
+  </tr>{% endfor %}
+</tbody></table></div>{% else %}<div class="empty">{{ icon('bookmark') }}No bookings found.</div>{% endif %}
+</div>
+{% endblock %}

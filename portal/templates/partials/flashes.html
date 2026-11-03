@@ -1,0 +1,14 @@
+{% from "partials/macros.html" import icon %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flashes" role="status" aria-live="polite">
+  {% for cat, msg in messages %}
+  <div class="flash {{ cat }}" data-flash>
+    {{ icon({'success':'check-circle','danger':'alert','warning':'alert'}.get(cat, 'info')) }}
+    <div>{{ msg }}</div>
+    <button class="x" type="button" aria-label="Dismiss" data-dismiss>&times;</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}

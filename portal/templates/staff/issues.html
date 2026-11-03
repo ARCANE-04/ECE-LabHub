@@ -1,0 +1,32 @@
+{% extends "staff/layout.html" %}
+{% from "partials/macros.html" import icon, status_badge, cond_badge, unitbar with context %}
+{% block title %}Issues{% endblock %}
+{% block crumb %}Issues{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1 style="margin:0">Issues</h1><p>Faults reported by students. Update the affected units so booking capacity stays accurate.</p></div>
+  <div class="seg"><a href="{{ url_for('staff.issues') }}" class="{{ 'active' if not sel }}">All</a>{% for s in statuses %}<a href="{{ url_for('staff.issues', status=s) }}" class="{{ 'active' if sel == s }}">{{ s }}</a>{% endfor %}</div></div>
+{% for i in rows %}{% set e = i.equipment %}
+<div class="panel" style="margin-bottom:14px">
+  <div class="panel-head">
+    <div><h2 style="font-size:1.05rem">{{ i.title }}</h2>
+      <div class="small muted">{{ e.name }} · {{ e.lab.name }} · reported by {{ i.reporter.full_name }} ({{ i.reporter.email }}) · {{ i.created_at|localdt }}</div></div>
+    <div style="display:flex;gap:6px;align-items:center">{{ status_badge(i.status) }}<span class="badge plain tag" style="margin:0">{{ i.severity }} severity</span></div>
+  </div>
+  <div class="panel-body">
+    <p class="small" style="white-space:pre-line">{{ i.description }}</p>
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--line-2);border-radius:10px;padding:10px 12px;margin-bottom:14px">
+      <div style="flex:1;min-width:200px"><div class="small"><b>Units now:</b> {{ unit_summary(e) }} (of {{ e.quantity }})</div><div style="margin-top:6px">{{ unitbar(e.unit_breakdown, e.quantity) }}</div></div>
+      <button class="btn btn-ghost btn-sm" type="button" data-units='{{ {"url": url_for("staff.update_units", eq_id=e.id), "name": e.name, "lab": e.lab.name, "img": img_src(e.image_path), "q": e.quantity, "f": e.units_functional, "p": e.units_partial, "d": e.units_damaged}|tojson|forceescape }}'>{{ icon('layers') }} Update units</button>
+    </div>
+    <form method="post" class="row" style="align-items:end" data-loading-form>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="issue_id" value="{{ i.id }}">
+      <div class="field" style="margin:0"><label>Status</label><select name="status">{% for s in statuses %}<option {{ 'selected' if i.status == s }}>{{ s }}</option>{% endfor %}</select></div>
+      <div class="field" style="flex:3 1 280px;margin:0"><label>Note to student</label><input name="staff_note" value="{{ i.staff_note or '' }}" placeholder="e.g. Probe replaced, unit back in service"></div>
+      <div class="field" style="flex:0 0 auto;margin:0"><button class="btn btn-primary" type="submit"><span class="spinner"></span>Update issue</button></div>
+    </form>
+  </div>
+</div>
+{% else %}
+<div class="panel empty">{{ icon('check-circle') }}No issues{{ ' with status ' ~ sel if sel }}.</div>
+{% endfor %}
+{% endblock %}
